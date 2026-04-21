@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TemplateHub - Jual Beli Template Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { brand: '#ff4d00', dark: '#0f0f0f', darker: '#0a0a0a', card: '#1a1a1a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f0f0f; color: white; -webkit-tap-highlight-color: transparent; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-nav { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); }
+        .hero-gradient { background: linear-gradient(to top, #0f0f0f 0%, transparent 100%); }
+    </style>
+</head>
+<body class="font-sans antialiased pb-20">
+
+    <!-- LAYAR LOADING PROGRESS -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/95 z-[99999] hidden flex-col items-center justify-center transition-opacity duration-300">
+        <div class="relative w-24 h-24 mb-6">
+            <div class="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
+            <div id="loading-spinner" class="absolute inset-0 border-4 border-brand rounded-full border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i class="fas fa-magic text-2xl text-brand animate-pulse"></i>
+            </div>
+        </div>
+        <p id="loading-text" class="text-white font-bold text-2xl mb-3 tracking-wider">0%</p>
+        <div class="w-64 bg-gray-800 rounded-full h-2 mb-3 overflow-hidden">
+            <div id="loading-bar" class="bg-brand h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p class="text-sm text-gray-400 text-center px-8">Memproses file template Anda...<br>Tunggu sebentar.</p>
+    </div>
+
+    <div id="app">
+        <!-- VIEW 1: HOME -->
+        <div id="view-home" class="block">
+            <header class="flex justify-between items-center p-4 sticky top-0 z-40 bg-dark/90 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=User&background=333&color=fff" class="w-10 h-10 rounded-full border border-gray-600" alt="Profile">
+                    <div>
+                        <p class="text-xs text-gray-400">Welcome</p>
+                        <p class="text-sm font-bold">Nana Sen</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 text-xl text-gray-300">
+                    <i class="fas fa-bell text-brand cursor-pointer"></i>
+                    <i class="fas fa-search text-brand cursor-pointer" onclick="toggleSearch()"></i>
+                </div>
+            </header>
+
+            <div id="search-container" class="hidden px-4 py-3 bg-darker border-b border-gray-800 transition-all">
+                <input type="text" id="search-input" onkeyup="handleSearch()" placeholder="Cari template..." class="w-full bg-dark border border-gray-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-brand">
+            </div>
+
+            <div class="px-4 mt-2">
+                <div onclick="goToDetail('sayangflix')" class="relative w-full h-56 rounded-2xl overflow-hidden cursor-pointer shadow-lg shadow-brand/20">
+                    <img src="https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 hero-gradient"></div>
+                    <div class="absolute bottom-4 left-4 right-4">
+                        <h2 class="text-2xl font-bold mb-1">Netflix Style: Sayangflix</h2>
+                        <div class="flex items-center gap-2 text-xs font-semibold">
+                            <span class="text-brand"><i class="fas fa-star"></i> 7.26</span>
+                            <span class="text-gray-400">•</span>
+                            <span class="bg-green-600 text-white px-2 py-0.5 rounded">ONGOING</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-4 mt-8">
+                <div class="flex gap-3 overflow-x-auto hide-scroll pb-2">
+                    <button id="cat-html" onclick="setCategory('html')" class="bg-card text-brand border border-gray-700 px-5 py-2 rounded-full text-sm font-medium transition">File HTML</button>
+                    <button id="cat-source" onclick="setCategory('source')" class="bg-card text-gray-400 border border-gray-700 px-5 py-2 rounded-full text-sm font-medium transition">Source Code</button>
+                </div>
+            </div>
+
+            <div class="px-4 mt-6 mb-8">
+                <h3 class="text-lg font-semibold mb-3">Semua Template</h3>
+                <div class="grid grid-cols-2 gap-4" id="template-grid"></div>
+                <div id="empty-state" class="hidden text-center py-10 bg-card rounded-xl border border-gray-800">
+                    <i class="fas fa-folder-open text-4xl text-gray-600 mb-3"></i>
+                    <p class="text-gray-400 text-sm">Belum ada data tersedia.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: DETAIL -->
+        <div id="view-detail" class="hidden bg-darker min-h-screen">
+            <div class="relative w-full h-64 bg-black cursor-pointer group" onclick="showLivePreview()">
+                <img id="detail-img" src="" class="w-full h-full object-cover opacity-60">
+                <button onclick="goHome(); event.stopPropagation();" class="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-sm z-10"><i class="fas fa-arrow-left"></i></button>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="bg-brand/90 w-16 h-16 rounded-full flex items-center justify-center shadow-lg shadow-brand/50 transition transform group-hover:scale-110"><i class="fas fa-play text-2xl text-white ml-1"></i></div>
+                </div>
+                <div class="absolute bottom-3 right-3 bg-black/70 px-3 py-1 rounded text-xs text-white border border-gray-600">Klik untuk Live Preview</div>
+            </div>
+            <div class="p-5">
+                <h1 id="detail-title" class="text-2xl font-bold mb-2">Judul Template</h1>
+                <p id="detail-desc" class="text-sm text-gray-400 leading-relaxed mb-8">Deskripsi...</p>
+                <button onclick="goToGenerate()" class="w-full bg-brand hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex justify-center items-center gap-2 text-lg mb-3">
+                    <i class="fas fa-magic"></i> Coba Buat / Generate
+                </button>
+                <button onclick="window.open('https://www.tiktok.com/@coffee_latte96?is_from_webapp=1&sender_device=pc', '_blank')" class="w-full bg-transparent border border-brand text-brand hover:bg-brand/10 font-bold py-4 rounded-xl transition transform active:scale-95 flex justify-center items-center gap-2 text-lg">
+                    <i class="fab fa-tiktok"></i> Request Custom (Chat Admin)
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 3: LIVE PREVIEW DEFAULT -->
+        <div id="view-interactive" class="hidden fixed inset-0 z-50 bg-black">
+            <button onclick="closeLivePreview()" class="absolute top-4 left-4 w-10 h-10 bg-black/60 rounded-full text-white z-[60]"><i class="fas fa-times"></i></button>
+            <iframe id="interactive-frame" class="w-full h-full border-0 pointer-events-auto bg-black"></iframe>
+        </div>
+
+        <!-- VIEW 4: GENERATOR FORM -->
+        <div id="view-generate" class="hidden bg-darker min-h-screen">
+            <header class="flex items-center gap-4 p-4 border-b border-gray-800"><button onclick="goBackToDetail()" class="text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-lg">Masukkan Data Kamu</h2></header>
+            <div class="p-5 pb-20">
+                <p class="text-sm text-gray-400 mb-6">Sistem cerdas kami telah menganalisa template ini secara otomatis. Silakan isi form di bawah:</p>
+                <div id="form-loading" class="text-center py-10 text-brand">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                    <p>Menganalisa File HTML...</p>
+                </div>
+                <form id="generator-form" class="space-y-6 hidden"></form>
+                <button id="btn-submit-generate" type="button" onclick="generatePreviewVideo()" class="hidden w-full bg-white text-black font-bold py-4 rounded-xl mt-8 justify-center items-center gap-2 transition transform active:scale-95"><i class="fas fa-play"></i> Buat Preview Sekarang</button>
+            </div>
+        </div>
+
+        <!-- VIEW 5: INTERACTIVE PREVIEW -->
+        <div id="view-preview-video" class="hidden bg-black min-h-screen relative">
+            <button onclick="document.getElementById('view-preview-video').classList.add('hidden'); document.getElementById('view-generate').classList.remove('hidden'); document.getElementById('video-frame').src = '';" class="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-full text-white z-[60]"><i class="fas fa-arrow-left"></i></button>
+            <div class="absolute top-4 right-4 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded z-[60]"><i class="fas fa-gamepad"></i> PREVIEW INTERAKTIF</div>
+            <iframe id="video-frame" class="w-full h-screen border-0 pointer-events-auto bg-black"></iframe>
+            <div class="fixed bottom-0 w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent z-[60] pointer-events-none">
+                <button onclick="goToCheckout()" class="w-full bg-brand hover:bg-orange-600 text-white font-bold py-4 rounded-xl transition transform active:scale-95 pointer-events-auto shadow-lg shadow-brand/30">
+                    Beli & Unduh File Asli (Rp 15.000)
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 6: CHECKOUT -->
+        <div id="view-checkout" class="hidden bg-darker min-h-screen">
+            <header class="flex items-center gap-4 p-4 border-b border-gray-800"><button onclick="goBackToPreview()" class="text-xl"><i class="fas fa-arrow-left"></i></button><h2 class="font-bold text-lg">Checkout Otomatis</h2></header>
+            <div class="p-5 pb-20 flex flex-col items-center">
+                <div class="w-full bg-brand/10 border border-brand/30 rounded-lg p-4 mb-8 text-sm text-gray-300">
+                    <p class="font-bold text-white mb-2 underline">Cara Pembayaran & Pengiriman:</p>
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>Isi nomor WhatsApp atau Email aktif di bawah.</li>
+                        <li>Klik "Bayar Sekarang" untuk mendapatkan QRIS.</li>
+                        <li>File HTML akan dikirim <b>otomatis</b> segera setelah pembayaran sukses.</li>
+                    </ol>
+                </div>
+                <div class="w-full space-y-6 mb-10">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1 font-medium">Tujuan Pengiriman File</label>
+                        <select id="send-method" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand">
+                            <option value="wa">WhatsApp</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1 font-medium">Kontak (WA/Email)</label>
+                        <input type="text" id="contact-info" placeholder="0812xxxx atau email@gmail.com" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand">
+                    </div>
+                </div>
+                <button id="btn-confirm-payment" onclick="processPayment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-5 rounded-xl shadow-lg flex justify-center items-center gap-3 transition transform active:scale-95">
+                    <i class="fas fa-qrcode text-2xl"></i> Bayar Sekarang (QRIS)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav id="bottom-nav" class="fixed bottom-0 w-full glass-nav flex justify-around items-center py-3 px-2 z-40 pb-safe">
+        <div class="flex flex-col items-center text-brand cursor-pointer" onclick="goHome()"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-medium">Home</span></div>
+        <div class="flex flex-col items-center text-gray-500 cursor-pointer"><i class="far fa-user text-xl mb-1"></i><span class="text-[10px] font-medium">Profile</span></div>
+    </nav>
+
+    <script>
+        const templates = [
+            { id: 'sayangflix', category: 'html', title: 'Netflix Style: Sayangflix', image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', desc: 'Halaman awal ala Netflix dengan efek cinematic.' },
+            { id: 'galeri', category: 'html', title: 'Galeri Polaroid Estetik', image: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=800', desc: 'Template polaroid estetik untuk ayang.' },
+            { id: 'pemandangan', category: 'html', title: 'Pemandangan Indah', image: 'https://images.unsplash.com/photo-1513628253939-010e64ac66cd?q=80&w=800', desc: 'Template pemandangan dengan BG dinamis.' }
+        ];
+
+        let currentTemplate = null;
+        let currentCategory = 'html';
+        let pendingGeneratedData = null; 
+
+        // DETEKSI URL API (OTOMATIS GANTI JIKA SUDAH HOSTING)
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+            ? 'http://localhost:3000' 
+            : 'https://api-anda.com'; 
+
+        // =========================================================================
+        // LOGIKA PEMBAYARAN - TERHUBUNG KE BACKEND (server.js)
+        // =========================================================================
+        async function processPayment() {
+            const contactInfo = document.getElementById('contact-info').value.trim();
+            const sendMethod = document.getElementById('send-method').value;
+            
+            if (!contactInfo) return alert('Mohon masukkan Nomor WhatsApp atau Email Anda.');
+
+            const btn = document.getElementById('btn-confirm-payment');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-xl"></i> Menghubungkan Kasir...`;
+            btn.disabled = true;
+
+            try {
+                // 1. Rakit file HTML akhir berisi foto/teks pembeli
+                const finalHtmlContent = await buildHTML(currentTemplate.id, pendingGeneratedData);
+
+                // 2. Kirim pesanan ke Backend
+                const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contact: contactInfo, 
+                        sendMethod: sendMethod, 
+                        templateName: currentTemplate.title,
+                        htmlData: finalHtmlContent 
+                    })
+                });
+
+                if (!response.ok) throw new Error("Server Backend belum aktif!");
+
+                const result = await response.json();
+                
+                // 3. Arahkan pembeli ke halaman pembayaran Midtrans asli
+                if (result.paymentUrl) {
+                    window.location.href = result.paymentUrl;
+                } else {
+                    throw new Error("Gagal mendapatkan link pembayaran.");
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Kesalahan: " + error.message + "\n\nPastikan Anda sudah menjalankan 'node server.js' di terminal atau Command Prompt.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- SISTEM PENDUKUNG (Search, UI, Scanner) ---
+        function toggleSearch() {
+            const container = document.getElementById('search-container');
+            container.classList.toggle('hidden');
+            if (!container.classList.contains('hidden')) document.getElementById('search-input').focus();
+            else { document.getElementById('search-input').value = ''; renderGrid(); }
+        }
+
+        function handleSearch() { renderGrid(); }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.getElementById('cat-html').className = cat === 'html' ? "bg-card text-brand border border-gray-700 px-5 py-2 rounded-full text-sm font-medium" : "bg-card text-gray-400 border border-gray-700 px-5 py-2 rounded-full text-sm font-medium";
+            document.getElementById('cat-source').className = cat === 'source' ? "bg-card text-brand border border-gray-700 px-5 py-2 rounded-full text-sm font-medium" : "bg-card text-gray-400 border border-gray-700 px-5 py-2 rounded-full text-sm font-medium";
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('template-grid');
+            const emptyState = document.getElementById('empty-state');
+            const query = document.getElementById('search-input')?.value.toLowerCase() || '';
+            grid.innerHTML = '';
+            let found = false;
+            templates.forEach(tpl => {
+                if(tpl.category === currentCategory && (tpl.title.toLowerCase().includes(query) || tpl.desc.toLowerCase().includes(query))) {
+                    found = true;
+                    grid.innerHTML += `<div onclick="goToDetail('${tpl.id}')" class="bg-card rounded-xl overflow-hidden cursor-pointer border border-gray-800 active:scale-95 transition"><div class="h-28 relative"><img src="${tpl.image}" class="w-full h-full object-cover"></div><div class="p-3"><h4 class="text-sm font-bold truncate">${tpl.title}</h4><p class="text-brand text-xs font-bold mt-1">Rp 15k</p></div></div>`;
+                }
+            });
+            grid.classList.toggle('hidden', !found);
+            emptyState.classList.toggle('hidden', found);
+        }
+
+        function hideAllViews() {
+            ['view-home', 'view-detail', 'view-generate', 'view-preview-video', 'view-checkout', 'view-interactive'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('bottom-nav').style.display = 'none';
+        }
+
+        function goHome() { hideAllViews(); document.getElementById('view-home').classList.remove('hidden'); document.getElementById('bottom-nav').style.display = 'flex'; }
+        function goToDetail(id) { currentTemplate = templates.find(t => t.id === id); document.getElementById('detail-img').src = currentTemplate.image; document.getElementById('detail-title').innerText = currentTemplate.title; document.getElementById('detail-desc').innerText = currentTemplate.desc; hideAllViews(); document.getElementById('view-detail').classList.remove('hidden'); }
+        function goBackToDetail() { hideAllViews(); document.getElementById('view-detail').classList.remove('hidden'); }
+        function goToCheckout() { hideAllViews(); document.getElementById('view-checkout').classList.remove('hidden'); }
+        function goBackToPreview() { hideAllViews(); document.getElementById('view-preview-video').classList.remove('hidden'); }
+
+        async function analyzeTemplateConfig(templateId) {
+            let tpl = templates.find(t => t.id === templateId);
+            if (tpl.formConfig && tpl.defaultData) return tpl;
+            try {
+                const response = await fetch('templates/' + templateId + '.html?v=' + new Date().getTime());
+                if (!response.ok) throw new Error('File HTML tidak ditemukan');
+                const rawHTML = await response.text();
+                const matches = [...rawHTML.matchAll(/\[\[\s*(.*?)\s*\]\]/g)].map(m => m[1]);
+                const uniqueKeys = [...new Set(matches)]; 
+                tpl.formConfig = []; tpl.defaultData = { AUTO_PLAY: 'false' }; tpl.rawHTML = rawHTML;
+                uniqueKeys.forEach((key, index) => {
+                    if (key.toUpperCase() === 'AUTO_PLAY') return;
+                    const lowerKey = key.toLowerCase();
+                    let inputType = 'text';
+                    if (lowerKey.match(/foto|bg|cine|img|gambar|cover|langit/)) inputType = 'file';
+                    else if (lowerKey.match(/lagu|musik|audio|sound|mp3/)) inputType = 'audio_file';
+                    else if (lowerKey.match(/pesan|desc|surat|paragraf/)) inputType = 'textarea';
+                    tpl.formConfig.push({ label: `${index + 1}. Masukkan ${key.replace(/_/g, ' ')}`, id: key, type: inputType });
+                    tpl.defaultData[key] = '';
+                });
+                return tpl;
+            } catch (err) { return null; }
+        }
+
+        async function compressImage(file, maxWidth = 1280, quality = 0.7) {
+            return new Promise((resolve) => {
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image(); img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > maxWidth) { h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                };
+            });
+        }
+
+        function fileToBase64(file) { return new Promise((resolve) => { const r = new FileReader(); r.readAsDataURL(file); r.onload = () => resolve(r.result); }); }
+
+        async function buildHTML(templateId, customData) {
+            const tpl = await analyzeTemplateConfig(templateId);
+            if (!tpl) return "Template tidak tersedia.";
+            let html = tpl.rawHTML; const data = customData || tpl.defaultData;
+            for (const key in data) {
+                const regex = new RegExp('\\[\\[\\s*' + key + '\\s*\\]\\]', 'gi');
+                let val = data[key];
+                if (typeof val === 'string' && !val.startsWith('data:')) val = val.replace(/\n/g, '<br>');
+                html = html.replace(regex, () => String(val));
+            }
+            // Anti-crash sisa tag
+            return html.replace(/\[\[.*?\]\]/g, '""');
+        }
+
+        async function showLivePreview() {
+            hideAllViews();
+            document.getElementById('view-interactive').classList.remove('hidden');
+            const html = await buildHTML(currentTemplate.id, null);
+            const blob = new Blob([html], { type: 'text/html' });
+            document.getElementById('interactive-frame').src = URL.createObjectURL(blob);
+        }
+        function closeLivePreview() { document.getElementById('view-interactive').classList.add('hidden'); document.getElementById('interactive-frame').src = ''; goBackToDetail(); }
+
+        async function goToGenerate() {
+            hideAllViews(); document.getElementById('view-generate').classList.remove('hidden');
+            const form = document.getElementById('generator-form'), btn = document.getElementById('btn-submit-generate'), loader = document.getElementById('form-loading');
+            form.innerHTML = '';
+            form.classList.add('hidden'); btn.classList.add('hidden'); loader.classList.remove('hidden');
+            const tpl = await analyzeTemplateConfig(currentTemplate.id); loader.classList.add('hidden');
+            if(!tpl) return form.innerHTML = 'Error analisa template.';
+            tpl.formConfig.forEach(f => {
+                let input = f.type === 'textarea' ? `<textarea id="${f.id}" rows="3" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:border-brand"></textarea>` : `<input type="${f.type.includes('file') ? 'file' : 'text'}" id="${f.id}" accept="${f.type === 'file' ? 'image/*' : (f.type === 'audio_file' ? 'audio/*' : '*')}" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white focus:border-brand">`;
+                form.innerHTML += `<div><label class="block text-sm text-gray-400 mb-1 font-medium">${f.label}</label>${input}</div>`;
+            });
+            form.classList.remove('hidden'); btn.classList.remove('hidden'); btn.classList.add('flex');
+        }
+
+        async function generatePreviewVideo() {
+            const overlay = document.getElementById('loading-overlay'); overlay.classList.remove('hidden');
+            const bar = document.getElementById('loading-bar'), text = document.getElementById('loading-text');
+            try {
+                let customData = { AUTO_PLAY: 'true' };
+                const tpl = await analyzeTemplateConfig(currentTemplate.id);
+                const fields = tpl.formConfig;
+                for (let i = 0; i < fields.length; i++) {
+                    const f = fields[i], el = document.getElementById(f.id);
+                    if (f.type.includes('file')) {
+                        if (el.files.length) customData[f.id] = f.type === 'file' ? await compressImage(el.files[0]) : await fileToBase64(el.files[0]);
+                        else customData[f.id] = tpl.defaultData[f.id] || '';
+                    } else customData[f.id] = el.value || tpl.defaultData[f.id] || '';
+                    let p = ((i + 1) / fields.length) * 100; bar.style.width = p + '%'; text.innerText = Math.round(p) + '%';
+                }
+                pendingGeneratedData = customData;
+                const html = await buildHTML(currentTemplate.id, customData);
+                document.getElementById('video-frame').src = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+                setTimeout(() => { overlay.classList.add('hidden'); hideAllViews(); document.getElementById('view-preview-video').classList.remove('hidden'); }, 1000);
+            } catch(e) { overlay.classList.add('hidden'); alert("Error sistem."); }
+        }
+
+        setCategory('html');
+    </script>
+</body>
+</html>

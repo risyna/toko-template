@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beranda - Sayangflix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-black: #141414;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--netflix-black);
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Wrapper for auto-landscape */
+        #main-wrapper {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Trik agar tampilan otomatis Landscape di HP portrait */
+        @media screen and (orientation: portrait) and (max-width: 768px) {
+            #main-wrapper {
+                transform: rotate(90deg);
+                transform-origin: left top;
+                width: 100vh;
+                height: 100vw;
+                top: 0;
+                left: 100%;
+            }
+        }
+
+        .bebas-font {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        /* Navbar Gradient */
+        .nav-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        /* Slider Styles */
+        .slider-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .slider-track {
+            display: flex;
+            width: 500%; /* 5 slides = 500% */
+            height: 100%;
+            transition: transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .slide {
+            width: 20%;
+            height: 100%;
+            background-size: cover;
+            background-position: center top;
+        }
+
+        /* Vignette / Fade effect over the slider so text is readable */
+        .vignette-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(20,20,20,0.9) 0%, rgba(20,20,20,0.4) 50%, rgba(20,20,20,0.1) 100%),
+                        linear-gradient(to top, var(--netflix-black) 0%, rgba(20,20,20,0) 30%);
+            z-index: 1;
+        }
+
+        /* Main Content Container (Static) */
+        .content-container {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 4% 5% 4%;
+        }
+
+        @media (min-width: 768px) {
+            .content-container {
+                padding: 0 4% 5% 4%;
+            }
+        }
+
+        /* Buttons */
+        .btn-play {
+            background-color: white;
+            color: black;
+            transition: background-color 0.2s;
+        }
+        .btn-play:hover {
+            background-color: rgba(255, 255, 255, 0.75);
+        }
+
+        .btn-info {
+            background-color: rgba(109, 109, 110, 0.7);
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-info:hover {
+            background-color: rgba(109, 109, 110, 0.4);
+        }
+
+        /* Top 10 Badge */
+        .top-10-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .top-10-icon {
+            background-color: var(--netflix-red);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            line-height: 1;
+        }
+
+        /* --- ANIMATION MOVIE SECTION --- */
+        #movie-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .cinematic-text {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 5px;
+            color: var(--netflix-red);
+            font-size: 3rem;
+            opacity: 0;
+            position: absolute;
+            text-align: center;
+        }
+
+        .message-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #e2e8f0;
+            max-width: 800px;
+            text-align: center;
+            padding: 0 20px;
+            opacity: 0;
+            position: absolute;
+        }
+
+        /* Typewriter Cursor */
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.2em;
+            background-color: white;
+            animation: blink 1s step-end infinite;
+            vertical-align: bottom;
+            margin-left: 5px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Cinematic Images in Movie */
+        .cinematic-img {
+            position: absolute;
+            max-width: 85%;
+            max-height: 60%;
+            object-fit: cover;
+            border-radius: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1.5s ease-in-out, transform 5s ease-out;
+            transform: scale(1);
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        }
+
+        .cinematic-img.show {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1.05); /* Efek lambat membesar ala film */
+        }
+
+        /* Falling Hearts in Movie */
+        .falling-heart {
+            position: absolute;
+            top: -50px;
+            color: var(--netflix-red);
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: fall linear forwards;
+            opacity: 0.6;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(1200px) rotate(360deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Audio Latar Belakang Musik -->
+<audio id="bg-music" src="music.mp3" loop></audio>
+
+<div id="main-wrapper">
+
+    <!-- NAVBAR -->
+    <nav class="absolute top-0 w-full z-50 nav-gradient px-4 py-5 md:px-12 flex items-center justify-between transition-all duration-300" id="navbar">
+        <div class="flex items-center gap-8">
+            <!-- Logo Netflix -->
+            <h1 class="text-3xl md:text-5xl text-[var(--netflix-red)] bebas-font m-0 cursor-pointer" onclick="showDummy()">NETFLIX</h1>
+            <ul class="hidden md:flex gap-5 text-sm font-semibold text-gray-300">
+                <li class="text-white cursor-pointer" onclick="showDummy()">Beranda</li>
+                <li class="hover:text-gray-400 cursor-pointer transition" onclick="showDummy()">Acara TV</li>
+                <li class="hover:text-gray-400 cursor-pointer transition" onclick="showDummy()">Film</li>
+                <li class="hover:text-gray-400 cursor-pointer transition" onclick="showDummy()">Baru & Populer</li>
+                <li class="hover:text-gray-400 cursor-pointer transition" onclick="showDummy()">Daftarku</li>
+            </ul>
+        </div>
+        <div class="flex items-center gap-5 text-xl">
+            <i class="fas fa-search cursor-pointer" onclick="showDummy()"></i>
+            <i class="fas fa-bell cursor-pointer" onclick="showDummy()"></i>
+            <div class="w-8 h-8 rounded bg-rose-600 flex items-center justify-center cursor-pointer" onclick="showDummy()">
+                <i class="fas fa-heart text-sm"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- BACKGROUND SLIDER -->
+    <div class="slider-wrapper">
+        <div class="slider-track" id="slider">
+            <!-- Slide 1: Panggung / Lampu -->
+            <div class="slide" style="background-image: url('[[1.jpg]]');"></div>
+            <!-- Slide 2: Mikrofon Elegan -->
+            <div class="slide" style="background-image: url('2.jpg');"></div>
+            <!-- Slide 3: Estetik Romantis / Bunga -->
+            <div class="slide" style="background-image: url('3.jpg');"></div>
+            <!-- Slide 4: Kemeriahan Penonton -->
+            <div class="slide" style="background-image: url('4.jpg');"></div>
+            <!-- Slide 5: Kopi / Pagi -->
+            <div class="slide" style="background-image: url('5.jpg');"></div>
+        </div>
+        <div class="vignette-overlay"></div>
+    </div>
+
+    <!-- MAIN CONTENT (STATIS, TIDAK IKUT SLIDE) -->
+    <div class="content-container w-full md:w-1/2">
+        
+        <!-- Logo / Judul Film -->
+        <div class="flex items-center gap-2 mb-4 text-gray-300 text-sm font-bold tracking-widest uppercase">
+            <span class="text-[var(--netflix-red)] text-xl">N</span> NETFLIX ORIGINAL
+        </div>
+
+        <!-- Judul Pagi -->
+        <h1 class="bebas-font text-6xl md:text-8xl mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-none text-white">SELAMAT<br>PAGI</h1>
+
+        <!-- Top 10 Ranking -->
+        <div class="top-10-badge mb-4 mt-2">
+            <span class="top-10-icon font-black">TOP<br>10</span>
+            <span>Semangat Pagi #1 Hari Ini</span>
+        </div>
+
+        <!-- Sinopsis Pagi -->
+        <p class="text-base md:text-lg mb-6 text-gray-200 drop-shadow-md max-w-2xl leading-snug">
+            isi teks di sini
+        </p>
+
+        <!-- Tombol Aksi -->
+        <div class="flex gap-3">
+            <button onclick="playMovie()" class="btn-play px-6 py-2 md:px-8 md:py-3 rounded flex items-center gap-3 font-bold text-lg">
+                <i class="fas fa-play text-xl"></i>
+                <span>Putar</span>
+            </button>
+            <button onclick="showDummy()" class="btn-info px-6 py-2 md:px-8 md:py-3 rounded flex items-center gap-3 font-bold text-lg">
+                <i class="fas fa-info-circle text-xl"></i>
+                <span>Selengkapnya</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- DUMMY OVERLAY -->
+    <div id="dummy-overlay" class="absolute inset-0 bg-black/90 z-[99999] hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-xl text-center max-w-sm mx-4 transform scale-95 transition-transform duration-300" id="dummy-box">
+            <i class="fas fa-heart text-5xl text-[var(--netflix-red)] mb-4 animate-pulse"></i>
+            <h3 class="text-2xl font-bold text-white mb-2">Pemberitahuan</h3>
+            <p class="text-gray-300 mb-6">Ga ada apapa sayangku di sini ❤️<br>Langsung klik tombol <b>Putar</b> aja ya!</p>
+            <button onclick="hideDummy()" class="bg-white hover:bg-gray-200 text-black font-bold py-2 px-6 rounded transition">
+                Oke, Sayang
+            </button>
+        </div>
+    </div>
+
+    <!-- MOVIE ANIMATION SECTION -->
+    <div id="movie-container">
+        <!-- Cinematic Intro Texts -->
+        <h2 id="intro-1" class="cinematic-text transition-opacity duration-1000">NETFLIX PRESENTS</h2>
+        
+        <!-- Cinematic Photos -->
+        <img id="cine-img-1" class="cinematic-img" src="1.jpg" alt="Cinematic image 1">
+        <img id="cine-img-2" class="cinematic-img" src="2.jpg" alt="Cinematic image 2">
+        <img id="cine-img-3" class="cinematic-img" src="3.jpg" alt="Cinematic image 3">
+
+        <!-- The Final Message -->
+        <div id="final-message" class="message-text">
+            <p id="typed-text"></p>
+            <span id="cursor" class="cursor"></span>
+        </div>
+    </div>
+
+</div> <!-- Akhir main-wrapper -->
+
+    <script>
+        // --- LOGIKA MUSIK LATAR ---
+        const bgMusic = document.getElementById('bg-music');
+        bgMusic.volume = 0.4; // Atur volume ke 40% agar suaranya menenangkan dan tidak terlalu keras
+
+        function startAudio() {
+            if (bgMusic.paused) {
+                bgMusic.play().catch(error => console.log("Autoplay dicegah oleh browser sebelum ada interaksi."));
+            }
+        }
+
+        // --- LOGIKA DUMMY OVERLAY ---
+        function showDummy() {
+            startAudio(); // Mulai musik saat klik di sembarang menu yang dummy
+            const dummy = document.getElementById('dummy-overlay');
+            const box = document.getElementById('dummy-box');
+            dummy.style.display = 'flex';
+            setTimeout(() => {
+                dummy.style.opacity = '1';
+                box.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        function hideDummy() {
+            const dummy = document.getElementById('dummy-overlay');
+            const box = document.getElementById('dummy-box');
+            dummy.style.opacity = '0';
+            box.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                dummy.style.display = 'none';
+            }, 300);
+        }
+
+        // --- LOGIKA SLIDER LATAR BELAKANG ---
+        const slider = document.getElementById('slider');
+        const totalSlides = 5;
+        let currentSlide = 0;
+
+        function nextSlide() {
+            currentSlide++;
+            if (currentSlide >= totalSlides) {
+                currentSlide = 0; // Kembali ke awal
+            }
+            // Geser track ke kiri sebesar kelipatan 20%
+            slider.style.transform = `translateX(-${currentSlide * 20}%)`;
+        }
+
+        // Jalankan slider setiap 5 detik
+        setInterval(nextSlide, 5000);
+
+        // --- LOGIKA ANIMASI SAAT KLIK 'PUTAR' ---
+        const movieContainer = document.getElementById('movie-container');
+        const intro1 = document.getElementById('intro-1');
+        const cineImg1 = document.getElementById('cine-img-1');
+        const cineImg2 = document.getElementById('cine-img-2');
+        const cineImg3 = document.getElementById('cine-img-3');
+        const finalMessage = document.getElementById('final-message');
+        const typedTextEl = document.getElementById('typed-text');
+        
+        const loveMessage = "[[isi teks di sini yaa. Have a great day, I love you! ❤️]]";
+
+        function playMovie() {
+            startAudio(); // Mulai musik saat tombol putar ditekan
+
+            // 1. Munculkan layar hitam
+            movieContainer.style.display = 'flex';
+            setTimeout(() => {
+                movieContainer.style.opacity = '1';
+            }, 100);
+
+            // 2. Mainkan Intro Sinematik
+            setTimeout(() => {
+                intro1.style.opacity = '1'; // Muncul NETFLIX PRESENTS
+            }, 1500);
+
+            setTimeout(() => {
+                intro1.style.opacity = '0'; // Hilang
+            }, 4000);
+
+            // 3. Tampilkan Foto 1 (Suasana Pagi)
+            setTimeout(() => {
+                cineImg1.classList.add('show');
+            }, 5500);
+
+            setTimeout(() => {
+                cineImg1.classList.remove('show');
+            }, 8500);
+
+            // 4. Tampilkan Foto 2 (Panggung/Mic)
+            setTimeout(() => {
+                cineImg2.classList.add('show');
+            }, 10000);
+
+            setTimeout(() => {
+                cineImg2.classList.remove('show');
+            }, 13000);
+
+            // 5. Tampilkan Foto 3 (Bunga/Romantis)
+            setTimeout(() => {
+                cineImg3.classList.add('show');
+            }, 14500);
+
+            setTimeout(() => {
+                cineImg3.classList.remove('show');
+            }, 17500);
+
+            // 6. Mulai ngetik pesan penyemangat
+            setTimeout(() => {
+                finalMessage.style.opacity = '1';
+                startTypewriter();
+                startFallingHearts();
+            }, 19000);
+        }
+
+        // --- LOGIKA TYPEWRITER ---
+        function startTypewriter() {
+            let i = 0;
+            typedTextEl.innerHTML = '';
+            
+            function type() {
+                if (i < loveMessage.length) {
+                    typedTextEl.innerHTML += loveMessage.charAt(i);
+                    i++;
+                    
+                    let speed = 50; // Kecepatan normal
+                    if (loveMessage.charAt(i-1) === '.' || loveMessage.charAt(i-1) === ',') {
+                        speed = 400; // Jeda saat tanda baca
+                    }
+                    setTimeout(type, speed);
+                } else {
+                    // Selesai ngetik
+                    document.getElementById('cursor').style.animation = 'none';
+                    document.getElementById('cursor').style.opacity = '0';
+                }
+            }
+            type();
+        }
+
+        // --- LOGIKA HUJAN HATI SAAT PESAN MUNCUL ---
+        function startFallingHearts() {
+            const heartSymbols = ["❤️", "✨", "🌹", "💖"];
+            
+            setInterval(() => {
+                if(movieContainer.style.display === 'none') return;
+
+                const heart = document.createElement('span');
+                heart.classList.add('falling-heart');
+                heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+                
+                // Posisi dan ukuran acak (gunakan % agar kompatibel di mode landscape)
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                
+                // Durasi jatuh acak
+                const duration = Math.random() * 5 + 4; // 4 to 9 seconds
+                heart.style.animationDuration = `${duration}s`;
+                
+                movieContainer.appendChild(heart);
+
+                // Bersihkan elemen
+                setTimeout(() => {
+                    heart.remove();
+                }, duration * 1000);
+            }, 400); // Buat setiap 0.4 detik
+        }
+    </script>
+</body>
+</html>
