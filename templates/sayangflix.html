@@ -249,8 +249,8 @@
 </head>
 <body>
 
-<!-- Audio Latar Belakang Musik -->
-<audio id="bg-music" src="music.mp3" loop></audio>
+<!-- Audio Latar Belakang Musik (Variabel Dinamis: LAGU_LATAR) -->
+<audio id="bg-music" src="[[LAGU_LATAR]]" loop></audio>
 
 <div id="main-wrapper">
 
@@ -276,19 +276,19 @@
         </div>
     </nav>
 
-    <!-- BACKGROUND SLIDER -->
+    <!-- BACKGROUND SLIDER (Variabel Dinamis Gambar BG) -->
     <div class="slider-wrapper">
         <div class="slider-track" id="slider">
-            <!-- Slide 1: Panggung / Lampu -->
-            <div class="slide" style="background-image: url('[[1.jpg]]');"></div>
-            <!-- Slide 2: Mikrofon Elegan -->
-            <div class="slide" style="background-image: url('2.jpg');"></div>
-            <!-- Slide 3: Estetik Romantis / Bunga -->
-            <div class="slide" style="background-image: url('3.jpg');"></div>
-            <!-- Slide 4: Kemeriahan Penonton -->
-            <div class="slide" style="background-image: url('4.jpg');"></div>
-            <!-- Slide 5: Kopi / Pagi -->
-            <div class="slide" style="background-image: url('5.jpg');"></div>
+            <!-- Slide 1 -->
+            <div class="slide" style="background-image: url('[[BG1]]');"></div>
+            <!-- Slide 2 -->
+            <div class="slide" style="background-image: url('[[BG2]]');"></div>
+            <!-- Slide 3 -->
+            <div class="slide" style="background-image: url('[[BG3]]');"></div>
+            <!-- Slide 4 -->
+            <div class="slide" style="background-image: url('[[BG4]]');"></div>
+            <!-- Slide 5 -->
+            <div class="slide" style="background-image: url('[[BG5]]');"></div>
         </div>
         <div class="vignette-overlay"></div>
     </div>
@@ -301,23 +301,23 @@
             <span class="text-[var(--netflix-red)] text-xl">N</span> NETFLIX ORIGINAL
         </div>
 
-        <!-- Judul Pagi -->
-        <h1 class="bebas-font text-6xl md:text-8xl mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-none text-white">SELAMAT<br>PAGI</h1>
+        <!-- Judul Pagi (Variabel Dinamis: JUDUL_UTAMA) -->
+        <h1 class="bebas-font text-6xl md:text-8xl mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-none text-white">[[JUDUL_UTAMA]]</h1>
 
         <!-- Top 10 Ranking -->
         <div class="top-10-badge mb-4 mt-2">
             <span class="top-10-icon font-black">TOP<br>10</span>
-            <span>Semangat Pagi #1 Hari Ini</span>
+            <span>[[TEKS_TOP_10]]</span>
         </div>
 
         <!-- Sinopsis Pagi -->
         <p class="text-base md:text-lg mb-6 text-gray-200 drop-shadow-md max-w-2xl leading-snug">
-            isi teks di sini
+            [[SINOPSIS]]
         </p>
 
         <!-- Tombol Aksi -->
         <div class="flex gap-3">
-            <button onclick="playMovie()" class="btn-play px-6 py-2 md:px-8 md:py-3 rounded flex items-center gap-3 font-bold text-lg">
+            <button onclick="playMovie()" class="btn-play px-6 py-2 md:px-8 md:py-3 rounded flex items-center gap-3 font-bold text-lg shadow-lg shadow-white/20 active:scale-95">
                 <i class="fas fa-play text-xl"></i>
                 <span>Putar</span>
             </button>
@@ -345,19 +345,22 @@
         <!-- Cinematic Intro Texts -->
         <h2 id="intro-1" class="cinematic-text transition-opacity duration-1000">NETFLIX PRESENTS</h2>
         
-        <!-- Cinematic Photos -->
-        <img id="cine-img-1" class="cinematic-img" src="1.jpg" alt="Cinematic image 1">
-        <img id="cine-img-2" class="cinematic-img" src="2.jpg" alt="Cinematic image 2">
-        <img id="cine-img-3" class="cinematic-img" src="3.jpg" alt="Cinematic image 3">
+        <!-- Cinematic Photos (Variabel Dinamis: CINE) -->
+        <img id="cine-img-1" class="cinematic-img" src="[[CINE1]]" alt="Cinematic image 1">
+        <img id="cine-img-2" class="cinematic-img" src="[[CINE2]]" alt="Cinematic image 2">
+        <img id="cine-img-3" class="cinematic-img" src="[[CINE3]]" alt="Cinematic image 3">
 
         <!-- The Final Message -->
         <div id="final-message" class="message-text">
-            <p id="typed-text"></p>
+            <p id="typed-text" style="white-space: pre-wrap; margin:0; display:inline;"></p>
             <span id="cursor" class="cursor"></span>
         </div>
     </div>
 
 </div> <!-- Akhir main-wrapper -->
+
+    <!-- DATA TERSEMBUNYI UNTUK DIBACA OLEH JAVASCRIPT (Agar tidak error saat baris baru) -->
+    <div id="raw-love-message" style="display: none;">[[PESAN_SURAT_CINTA]]</div>
 
     <script>
         // --- LOGIKA MUSIK LATAR ---
@@ -409,6 +412,9 @@
         // Jalankan slider setiap 5 detik
         setInterval(nextSlide, 5000);
 
+        // --- MENGAMBIL PESAN DARI HTML TERSEMBUNYI ---
+        const loveMessage = document.getElementById('raw-love-message').innerHTML.replace(/<br>/g, '\n').trim();
+
         // --- LOGIKA ANIMASI SAAT KLIK 'PUTAR' ---
         const movieContainer = document.getElementById('movie-container');
         const intro1 = document.getElementById('intro-1');
@@ -418,8 +424,6 @@
         const finalMessage = document.getElementById('final-message');
         const typedTextEl = document.getElementById('typed-text');
         
-        const loveMessage = "[[isi teks di sini yaa. Have a great day, I love you! ❤️]]";
-
         function playMovie() {
             startAudio(); // Mulai musik saat tombol putar ditekan
 
@@ -523,6 +527,13 @@
                     heart.remove();
                 }, duration * 1000);
             }, 400); // Buat setiap 0.4 detik
+        }
+
+        // --- LOGIKA AUTO-PLAY UNTUK PREVIEW DARI WEBSITE ---
+        const isAutoPlay = "[[AUTO_PLAY]]" === "true";
+        if (isAutoPlay) {
+            // Jika diklik lewat preview web, tekan "Putar" secara otomatis setelah 1 detik
+            setTimeout(playMovie, 1000);
         }
     </script>
 </body>
