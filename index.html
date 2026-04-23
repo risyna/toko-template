@@ -143,6 +143,7 @@
         <div id="view-preview-video" class="hidden bg-black min-h-screen relative">
             <button onclick="document.getElementById('view-preview-video').classList.add('hidden'); document.getElementById('view-generate').classList.remove('hidden'); document.getElementById('video-frame').src = '';" class="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-full text-white z-[60]"><i class="fas fa-arrow-left"></i></button>
             <div class="absolute top-4 right-4 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded z-[60]"><i class="fas fa-gamepad"></i> PREVIEW INTERAKTIF</div>
+            <!-- Menggunakan pointer-events-auto agar iframe bisa diklik manual -->
             <iframe id="video-frame" class="w-full h-screen border-0 pointer-events-auto bg-black"></iframe>
             <div class="fixed bottom-0 w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent z-[60] pointer-events-none">
                 <button onclick="goToCheckout()" class="w-full bg-brand hover:bg-orange-600 text-white font-bold py-4 rounded-xl transition transform active:scale-95 pointer-events-auto shadow-lg shadow-brand/30">
@@ -200,8 +201,8 @@
         let currentCategory = 'html';
         let pendingGeneratedData = null; 
 
-        // DETEKSI URL API (DIPERBAIKI UNTUK VERCEL)
-        const API_BASE_URL = ''; // Dikosongkan agar sistem otomatis mengikuti link Vercel Anda saat ini
+        // DETEKSI URL API
+        const API_BASE_URL = ''; 
 
         // =========================================================================
         // LOGIKA PEMBAYARAN - TERHUBUNG KE BACKEND (server.js)
@@ -387,7 +388,8 @@
             const overlay = document.getElementById('loading-overlay'); overlay.classList.remove('hidden');
             const bar = document.getElementById('loading-bar'), text = document.getElementById('loading-text');
             try {
-                let customData = { AUTO_PLAY: 'true' };
+                // AUTO_PLAY DIUBAH MENJADI FALSE AGAR TIDAK OTOMATIS BERPUTAR!
+                let customData = { AUTO_PLAY: 'false' };
                 const tpl = await analyzeTemplateConfig(currentTemplate.id);
                 const fields = tpl.formConfig;
                 for (let i = 0; i < fields.length; i++) {
