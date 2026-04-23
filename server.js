@@ -5,12 +5,24 @@ const express = require('express');
 const cors = require('cors');
 const midtransClient = require('midtrans-client');
 const nodemailer = require('nodemailer');
+const path = require('path'); // Tambahan baru untuk membaca lokasi file
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Limit besar untuk gambar base64
+app.use(express.json({ limit: '50mb' })); 
+
+// =========================================================================
+// TAMBAHAN BARU: Menampilkan File Halaman Web (Frontend)
+// =========================================================================
+// Mengizinkan server membaca file HTML, CSS, Gambar di folder ini
+app.use(express.static(__dirname));
+
+// Jika seseorang membuka link web utama ( / ), tampilkan index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // =========================================================================
 // PENGECEKAN KEAMANAN (.env)
@@ -20,16 +32,16 @@ if (!process.env.MIDTRANS_SERVER_KEY) {
 }
 
 // =========================================================================
-// 1. KONFIGURASI MIDTRANS (Aman, disembunyikan di .env)
+// 1. KONFIGURASI MIDTRANS
 // =========================================================================
 let snap = new midtransClient.Snap({
-    isProduction: true, // Karena Anda menggunakan kunci asli (Live)
+    isProduction: true, 
     serverKey: process.env.MIDTRANS_SERVER_KEY || 'KUNCI_KOSONG',
     clientKey: process.env.MIDTRANS_CLIENT_KEY || 'KUNCI_KOSONG'
 });
 
 // =========================================================================
-// 2. KONFIGURASI EMAIL (Aman, disembunyikan di .env)
+// 2. KONFIGURASI EMAIL
 // =========================================================================
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -39,7 +51,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Database sementara (Memory)
 const pendingOrders = {}; 
 
 // =========================================================================
@@ -50,7 +61,6 @@ app.post('/api/checkout', async (req, res) => {
         const { contact, sendMethod, htmlData, templateName } = req.body;
         const orderId = "ORDER-" + Math.floor(Math.random() * 1000000);
 
-        // Simpan data order
         pendingOrders[orderId] = {
             contact: contact, 
             sendMethod: sendMethod, 
@@ -58,11 +68,10 @@ app.post('/api/checkout', async (req, res) => {
             status: 'PENDING'
         };
 
-        // Buat tagihan QRIS Midtrans
         let parameter = {
             "transaction_details": { 
                 "order_id": orderId, 
-                "gross_amount": 15000 // Rp 15.000
+                "gross_amount": 15000 
             },
             "customer_details": {
                 "email": sendMethod === 'email' ? contact : 'customer@example.com',
@@ -91,7 +100,7 @@ app.post('/api/checkout', async (req, res) => {
 });
 
 // =========================================================================
-// API 2: WEBHOOK MIDTRANS (Sistem otomatis saat pembeli selesai bayar)
+// API 2: WEBHOOK MIDTRANS
 // =========================================================================
 app.post('/api/midtrans-webhook', async (req, res) => {
     try {
@@ -103,20 +112,18 @@ app.post('/api/midtrans-webhook', async (req, res) => {
 
         console.log(`Status Pembayaran ${orderId}: ${transactionStatus}`);
 
-        // Jika lunas (settlement)
         if (transactionStatus == 'settlement' || transactionStatus == 'capture') {
             const order = pendingOrders[orderId];
             
             if (order && order.status !== 'PAID') {
                 order.status = 'PAID';
                 
-                // Kirim Email Otomatis
                 if (order.sendMethod === 'email') {
                     await transporter.sendMail({
                         from: process.env.EMAIL_USER,
                         to: order.contact,
                         subject: 'Pesanan Template Anda - TemplateHub',
-                        text: 'Terima kasih telah membeli! File HTML pesanan Anda sudah terlampir. Silakan unduh dan buka di browser.',
+                        text: 'Terima kasih telah membeli! File HTML pesanan Anda sudah terlampir.',
                         attachments: [{ 
                             filename: 'Pesanan_Template_Kamu.html', 
                             content: order.htmlData 
@@ -124,9 +131,6 @@ app.post('/api/midtrans-webhook', async (req, res) => {
                     });
                     console.log("✅ File berhasil dikirim ke Email pembeli!");
                 } 
-                else if (order.sendMethod === 'wa') {
-                    console.log("✅ Pembayaran WA berhasil (Perlu integrasi bot WA terpisah).");
-                }
                 
                 delete pendingOrders[orderId];
             }
@@ -140,14 +144,13 @@ app.post('/api/midtrans-webhook', async (req, res) => {
 });
 
 // =========================================================================
-// JALANKAN SERVER (Disesuaikan untuk Lokal & Vercel)
+// JALANKAN SERVER
 // =========================================================================
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-        console.log(`🚀 Server Backend berjalan aman di http://localhost:${PORT}`);
+        console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
     });
 }
 
-// Export untuk Vercel
 module.exports = app;
