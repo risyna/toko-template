@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Galaksi Foto Imersif</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #140520; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* Layar Loading */
+        #loading {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #140520; color: #fff; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 1.5s ease-out;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #ff00ff; border-right: 3px solid #00ffff; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* UI Elemen */
+        #hint {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 10, 40, 0.7); color: rgba(255,255,255,0.9);
+            padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 10;
+            pointer-events: none; border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px);
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(255, 0, 255, 0.2);
+            transition: opacity 1s;
+        }
+    </style>
+    <!-- Memuat Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <!-- Musik Latar -->
+    <audio id="bgm" loop>
+        <source src="[[MUSIK_BACKGROUND]]" type="audio/mpeg">
+    </audio>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="loading-text" style="font-size: 16px; letter-spacing: 2px; text-transform: uppercase;">Membangun Dimensi...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+    
+    <div id="hint">Tarik dari atas dan ketuk tombol kembali untuk keluar dari mode layar penuh.<br><br><span style="font-size:11px; opacity: 0.8; color: #00ffff;">(Sentuh layar untuk mengaktifkan musik)</span></div>
+
+    <script>
+        // ============================================================================
+        // PENGATURAN FOTO (TERHUBUNG KE SISTEM UPLOAD TEMPLATE)
+        // ============================================================================
+        const DAFTAR_LINK_FOTO = [
+            "[[FOTO_1]]", "[[FOTO_2]]", "[[FOTO_3]]", "[[FOTO_4]]", "[[FOTO_5]]",
+            "[[FOTO_6]]", "[[FOTO_7]]", "[[FOTO_8]]", "[[FOTO_9]]", "[[FOTO_10]]",
+            "[[FOTO_11]]", "[[FOTO_12]]", "[[FOTO_13]]", "[[FOTO_14]]", "[[FOTO_15]]",
+            "[[FOTO_16]]", "[[FOTO_17]]", "[[FOTO_18]]", "[[FOTO_19]]", "[[FOTO_20]]",
+            "[[FOTO_21]]", "[[FOTO_22]]", "[[FOTO_23]]", "[[FOTO_24]]", "[[FOTO_25]]"
+        ];
+
+        // ============================================================================
+        // PENGATURAN GALAKSI UTAMA
+        // ============================================================================
+        const TOTAL_FOTO = 8000; 
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Warna dasar diubah menjadi ungu gelap, bukan hitam pekat
+        scene.background = new THREE.Color(0x1a0525); 
+        // Fog disesuaikan agar warna latar lebih mendominasi
+        scene.fog = new THREE.FogExp2(0x1a0525, 0.0006); 
+
+        // Posisi kamera sedikit lebih jauh
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(0, 100, 550); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 2000;
+        controls.minDistance = 80;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8; 
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+
+        let starsGeom = null;
+        let photoGroup = new THREE.Group();
+        scene.add(photoGroup);
+
+        const comets = [];
+
+        // --- 1. NEBULA BACKGROUND (SANGAT BERWARNA & BESAR) ---
+        function createNebulaGlows() {
+            const createGlow = (color, x, y, z, scale, opacity) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+                
+                const r = (color >> 16) & 255;
+                const g = (color >> 8) & 255;
+                const b = color & 255;
+                
+                // Inti lebih terang, pinggiran memudar lambat
+                gradient.addColorStop(0, `rgba(${r},${g},${b},1)`);
+                gradient.addColorStop(0.4, `rgba(${r},${g},${b},0.6)`);
+                gradient.addColorStop(1, `rgba(0,0,0,0)`);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 256, 256);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    blending: THREE.AdditiveBlending,
+                    opacity: opacity,
+                    depthWrite: false
+                });
+                const sprite = new THREE.Sprite(material);
+                sprite.position.set(x, y, z);
+                sprite.scale.set(scale, scale, 1);
+                scene.add(sprite);
+            };
+
+            // Warna warni raksasa menutupi langit angkasa
+            createGlow(0xff0088, 0, 0, -1200, 3500, 0.4);       // Pink raksasa di tengah belakang
+            createGlow(0x00ffff, 600, 300, -1000, 2500, 0.5);   // Cyan sangat besar di kanan atas
+            createGlow(0x8800ff, -600, -200, -900, 2500, 0.6);  // Ungu terang di kiri bawah
+            createGlow(0x00ff66, -400, 500, -1000, 2000, 0.4);  // Hijau neon di kiri atas
+            createGlow(0xffaa00, 400, -400, -900, 2200, 0.4);   // Oranye terang di kanan bawah
+            createGlow(0xffffff, 0, 0, -600, 1500, 0.2);        // Highlight putih di tengah
+        }
+        createNebulaGlows();
+
+        // --- 2. PARTIKEL BINTANG & BINTANG MELINTAS ---
+        function createStars() {
+            const starCount = 8000;
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount * 3; i++) {
+                starPos[i] = (Math.random() - 0.5) * 4000; 
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0xffffff, size: 1.5, transparent: true, opacity: 0.9
+            });
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+            starsGeom = starGeo;
+        }
+        createStars();
+
+        function initComets() {
+            // Silinder meruncing: Kepala besar (2) di depan, ekor (0) di belakang
+            const geom = new THREE.CylinderGeometry(2, 0, 300, 8);
+            geom.rotateX(Math.PI / 2); // Menghadap sumbu Z
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: 0x88ffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending 
+            });
+
+            for(let i=0; i<10; i++) {
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.active = false;
+                mesh.position.set(9999, 9999, 9999); // Sembunyikan dulu
+                scene.add(mesh);
+                comets.push(mesh);
+            }
+        }
+        
+        function spawnComet(comet) {
+            comet.active = true;
+            const side = Math.random() > 0.5 ? 1 : -1;
+            // Muncul dari pinggir jauh luar angkasa
+            comet.position.set(
+                side * (1500 + Math.random() * 500),
+                (Math.random() - 0.5) * 1000,
+                (Math.random() - 0.5) * 2000
+            );
+            // Menembak ke arah seberang
+            const target = new THREE.Vector3(
+                -side * (1500 + Math.random() * 500),
+                (Math.random() - 0.5) * 1000,
+                (Math.random() - 0.5) * 2000
+            );
+            
+            // Kecepatan lesatan kilat (Sangat Cepat)
+            comet.velocity = new THREE.Vector3().subVectors(target, comet.position).normalize().multiplyScalar(40 + Math.random() * 30);
+            
+            // Arahkan kepala komet ke arah geraknya
+            comet.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), comet.velocity.clone().normalize());
+        }
+        initComets();
+
+        // --- 3. PLANET PEARLESCENT & CINCIN PUTIH TEBAL ---
+        const planetCenter = new THREE.Group();
+        scene.add(planetCenter);
+
+        const planetCanvas = document.createElement('canvas');
+        planetCanvas.width = 512; planetCanvas.height = 512;
+        const pCtx = planetCanvas.getContext('2d');
+        const pGrad = pCtx.createLinearGradient(0, 0, 512, 512);
+        pGrad.addColorStop(0, "#ffff88"); 
+        pGrad.addColorStop(0.3, "#ff88ff"); 
+        pGrad.addColorStop(0.6, "#88ffff"); 
+        pGrad.addColorStop(0.8, "#d488ff"); 
+        pGrad.addColorStop(1, "#ffff88");
+        pCtx.fillStyle = pGrad;
+        pCtx.fillRect(0, 0, 512, 512);
+        
+        const planetMat = new THREE.MeshStandardMaterial({
+            map: new THREE.CanvasTexture(planetCanvas),
+            emissiveMap: new THREE.CanvasTexture(planetCanvas),
+            emissive: 0xffffff,
+            emissiveIntensity: 0.9, 
+            roughness: 0.2,
+            metalness: 0.1,
+        });
+        
+        const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(28, 64, 64), planetMat);
+        planetCenter.add(planetMesh);
+
+        // Cincin putih Solid
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        
+        const ringGeo1 = new THREE.TorusGeometry(45, 0.7, 16, 120); 
+        const r1 = new THREE.Mesh(ringGeo1, ringMat); 
+        r1.rotation.x = Math.PI/2 - 0.3; r1.rotation.y = 0.2;
+        
+        const ringGeo2 = new THREE.TorusGeometry(55, 0.5, 16, 120);
+        const r2 = new THREE.Mesh(ringGeo2, ringMat); 
+        r2.rotation.x = Math.PI/2 + 0.5; r2.rotation.y = -0.3;
+        
+        const ringGeo3 = new THREE.TorusGeometry(70, 0.8, 16, 120); 
+        const r3 = new THREE.Mesh(ringGeo3, ringMat); 
+        r3.rotation.x = Math.PI/2 - 0.1; r3.rotation.y = 0.6;
+        
+        planetCenter.add(r1, r2, r3);
+
+        // --- 4. SABUK FOTO (DISTRIBUSI MERATA) ---
+        function createDefaultTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 192;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 128, 192);
+            ctx.fillStyle = '#cfcfcf'; ctx.fillRect(6, 6, 116, 180);
+            ctx.fillStyle = '#a0a0a0';
+            ctx.beginPath(); ctx.arc(64, 70, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(24, 180); ctx.quadraticCurveTo(64, 110, 104, 180); ctx.fill();
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+        const fallbackTexture = createDefaultTexture();
+
+        function createPhotoTexture(imgObj) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200; canvas.height = 300; 
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const border = 10;
+            const w = canvas.width - (border*2);
+            const h = canvas.height - (border*2);
+            const imgRatio = imgObj.width / imgObj.height;
+            const canvasRatio = w / h;
+            let dW, dH, dX, dY;
+
+            if (imgRatio > canvasRatio) {
+                dH = h; dW = imgObj.width * (h / imgObj.height);
+                dX = border - (dW - w) / 2; dY = border;
+            } else {
+                dW = w; dH = imgObj.height * (w / imgObj.width);
+                dX = border; dY = border - (dH - h) / 2;
+            }
+
+            ctx.save();
+            ctx.beginPath(); ctx.rect(border, border, w, h); ctx.clip();
+            ctx.drawImage(imgObj, dX, dY, dW, dH);
+            ctx.restore();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+
+        function loadImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; 
+                img.onload = () => resolve(createPhotoTexture(img));
+                img.onerror = () => resolve(null); 
+                img.src = url;
+            });
+        }
+
+        async function initPhotos() {
+            // Saring URL: Abaikan yang kosong atau yang masih berupa teks mentah "[[...]]"
+            let validUrls = DAFTAR_LINK_FOTO.filter(url => 
+                url && url.trim() !== "" && !url.includes("[[")
+            );
+            let textures = [];
+
+            if(validUrls.length > 0) {
+                const results = await Promise.all(validUrls.map(url => loadImage(url)));
+                textures = results.filter(tex => tex !== null);
+            }
+            if(textures.length === 0) textures = [fallbackTexture];
+
+            const planeGeo = new THREE.PlaneGeometry(3.5, 5.25); 
+            const totalTextures = textures.length;
+            const instancesPerTexture = Math.ceil(TOTAL_FOTO / totalTextures);
+
+            const radiusMin = 130;  // PERBAIKAN: Jarak diperlebar agar bentuk lingkaran tengah (lubang) terlihat sangat jelas
+            const radiusMax = 700;  
+
+            // Tambahkan Garis Orbit Transparan agar pola lingkaran lebih tegas
+            const orbitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04, side: THREE.DoubleSide });
+            for(let r = radiusMin; r <= radiusMax; r += 40) {
+                const ringGeo = new THREE.RingGeometry(r, r + 0.8, 128); 
+                const ring = new THREE.Mesh(ringGeo, orbitMat);
+                ring.rotation.x = Math.PI / 2; // Datar sejajar sabuk foto
+                photoGroup.add(ring);
+            }
+
+            let globalIndex = 0;
+            const dummy = new THREE.Object3D();
+
+            for (let t = 0; t < totalTextures; t++) {
+                const mat = new THREE.MeshBasicMaterial({ 
+                    map: textures[t], 
+                    side: THREE.DoubleSide,
+                    transparent: false 
+                });
+                
+                const instancedMesh = new THREE.InstancedMesh(planeGeo, mat, instancesPerTexture);
+                
+                for (let i = 0; i < instancesPerTexture; i++) {
+                    if (globalIndex >= TOTAL_FOTO) break;
+
+                    const angle = Math.random() * Math.PI * 2;
+                    
+                    // PERBAIKAN: Menggunakan Math.sqrt agar foto menyebar RATA di seluruh area lingkaran.
+                    // Ini mencegah penumpukan (clumping) di area tengah dekat planet.
+                    const distribution = Math.sqrt(Math.random());
+                    const r = radiusMin + distribution * (radiusMax - radiusMin);
+                    
+                    const x = Math.cos(angle) * r;
+                    const z = Math.sin(angle) * r;
+                    
+                    // PERBAIKAN: Sabuk foto dibuat lebih pipih (tipis) agar bentuk cincinnya jelas seperti piringan
+                    const ySpread = 10 + (distribution * 15); 
+                    const y = (Math.random() - 0.5) * ySpread;
+
+                    dummy.position.set(x, y, z);
+                    
+                    // Menghadap luar
+                    dummy.lookAt(0, y, 0);
+                    dummy.rotation.y += Math.PI; 
+                    
+                    // Rotasi acak kecil agar natural
+                    dummy.rotation.x += (Math.random() - 0.5) * 0.25;
+                    dummy.rotation.z += (Math.random() - 0.5) * 0.25;
+
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(i, dummy.matrix);
+                    
+                    globalIndex++;
+                }
+                photoGroup.add(instancedMesh);
+            }
+
+            photoGroup.rotation.x = 0.05;
+            photoGroup.rotation.z = -0.02;
+
+            const loadingScreen = document.getElementById('loading');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => loadingScreen.style.display = 'none', 1500);
+            
+            setupAudioAutoplay();
+        }
+
+        initPhotos();
+
+        // --- 5. HACK AUTOPLAY MUSIK ---
+        function setupAudioAutoplay() {
+            const bgm = document.getElementById('bgm');
+            bgm.volume = 0.8;
+            
+            const startMusic = () => {
+                if (bgm.paused) {
+                    bgm.play().catch(e => console.log("Menunggu interaksi"));
+                }
+                document.removeEventListener('click', startMusic);
+                document.removeEventListener('touchstart', startMusic);
+                document.removeEventListener('scroll', startMusic);
+                
+                setTimeout(() => {
+                    const hint = document.getElementById('hint');
+                    if(hint) hint.style.opacity = '0';
+                }, 4000);
+            };
+
+            bgm.play().catch(() => {
+                document.addEventListener('click', startMusic);
+                document.addEventListener('touchstart', startMusic, {passive: true});
+                document.addEventListener('scroll', startMusic, {passive: true});
+            });
+        }
+
+        // --- 6. ANIMASI ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            planetMesh.rotation.y += 0.01; 
+
+            r1.rotation.z -= 0.015;
+            r2.rotation.z += 0.012;
+            r3.rotation.z -= 0.01;
+
+            photoGroup.rotation.y -= 0.002; 
+
+            if (starsGeom) {
+                const positions = starsGeom.attributes.position.array;
+                for(let i = 1; i < positions.length; i += 3) {
+                    positions[i+1] += 2.0; 
+                    if(positions[i+1] > 2000) positions[i+1] = -2000;
+                }
+                starsGeom.attributes.position.needsUpdate = true;
+            }
+
+            // Animasi Kilatan Komet Lewat
+            comets.forEach(comet => {
+                if(comet.active) {
+                    comet.position.add(comet.velocity);
+                    // Reset jika sudah terlalu jauh keluar layar
+                    if(comet.position.length() > 4000) {
+                        comet.active = false;
+                        comet.position.set(9999, 9999, 9999);
+                    }
+                } else {
+                    // Muncul secara acak sesekali sebagai kilatan
+                    if(Math.random() < 0.008) {
+                        spawnComet(comet);
+                    }
+                }
+            });
+
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>
