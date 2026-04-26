@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You 💖</title>
+    
+    <!-- Font Lucu, Romantis, dan Elegan -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Nunito:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+    <style>
+        /* === GLOBAL STYLES === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            font-family: 'Nunito', sans-serif;
+            background-color: #111; 
+            color: #590d22;
+            overflow-x: hidden;
+            /* Scroll snap agar saat di-scroll langsung mengunci ke slide berikutnya secara penuh */
+            scroll-snap-type: y mandatory;
+        }
+
+        .handwriting { font-family: 'Dancing Script', cursive; }
+        .serif { font-family: 'Playfair Display', serif; }
+
+        /* === FITUR WAJIB ROTATE UNTUK HP (PORTRAIT) === */
+        #rotate-device {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #ffb3c6;
+            color: #590d22;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #rotate-device h1 { font-size: 3rem; margin-bottom: 10px; }
+        #rotate-device p { font-size: 1.2rem; font-weight: 600; }
+
+        @media screen and (orientation: portrait) {
+            #rotate-device { display: flex; }
+            .main-content { display: none; }
+            body { overflow: hidden; }
+        }
+
+        /* === KONSEP FULL SCREEN (1 LAYAR PENUH) === */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start; /* Snap ke ujung atas layar */
+            position: relative;
+            background-color: #fff0f3; /* Default warna pastel */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 5vh 8vw; /* Padding menggunakan unit layar agar proporsional */
+        }
+
+        /* === ANIMASI FADE UP === */
+        .anim {
+            opacity: 0;
+            transform: translateY(5vh);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .anim.visible { opacity: 1; transform: translateY(0); }
+        .d-1 { transition-delay: 0.2s; }
+        .d-2 { transition-delay: 0.4s; }
+        .d-3 { transition-delay: 0.6s; }
+        .d-4 { transition-delay: 0.8s; }
+
+        /* === SLIDE 1: HERO === */
+        .slide-hero {
+            background-image: url('[[FOTO_BACKGROUND_1]]');
+            background-size: cover;
+            background-position: center;
+        }
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to right, rgba(255, 240, 243, 0.95) 0%, rgba(255, 240, 243, 0.2) 100%);
+            z-index: 1;
+        }
+        .hero-content { position: relative; z-index: 2; width: 60%; }
+        .hero-content h1 { font-size: 8vw; line-height: 1.1; color: #d81159; margin-bottom: 2vh; text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.8); }
+        .hero-content p { font-size: 2vw; font-weight: 700; background: rgba(255, 255, 255, 0.8); padding: 1vh 2vw; border-radius: 2vw; display: inline-block; }
+
+        /* === SLIDE 2: GRID FOTO MIRING (NEW) === */
+        .slide-photo-grid {
+            background-color: #111;
+            justify-content: center;
+            padding: 0; /* Full tanpa padding */
+        }
+        
+        .tilted-grid-container {
+            position: absolute;
+            top: -50%; left: -20%;
+            width: 150%; height: 200%;
+            transform: rotate(-10deg); /* Kemiringan foto */
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tilted-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1vw;
+            width: 100%;
+        }
+
+        .tilted-grid img {
+            width: 100%;
+            aspect-ratio: 1; /* Membuat foto jadi kotak proporsional */
+            object-fit: cover;
+            opacity: 0.7; /* Agak redup */
+            filter: grayscale(30%); /* Sedikit grayscale agar teks lebih menonjol */
+        }
+
+        .grid-dark-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); /* Efek gelap agar teks terbaca jelas */
+            z-index: 1;
+        }
+
+        .grid-text-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2vw;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .grid-text-content .huge-number {
+            font-size: 15vw;
+            font-style: italic;
+            line-height: 0.8;
+            font-weight: 400;
+        }
+
+        .grid-text-lines {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 4vw;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        /* === SLIDE 3: POLAROID === */
+        .slide-polaroid { justify-content: space-between; }
+        .text-box { width: 45%; background: white; padding: 4vw; border-radius: 2vw; box-shadow: 0 1vw 3vw rgba(216, 17, 89, 0.1); position: relative; }
+        .text-box h2 { font-size: 4vw; color: #d81159; margin-bottom: 2vh; }
+        .text-box p { font-size: 1.5vw; line-height: 1.8; color: #555; }
+        
+        .polaroid-group { width: 50%; height: 80vh; position: relative; }
+        .polaroid { background: white; padding: 1vw 1vw 4vw 1vw; box-shadow: 0 1vw 2vw rgba(0,0,0,0.15); border-radius: 0.5vw; position: absolute; width: 18vw; }
+        .polaroid img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 0.3vw; }
+        .p1 { top: 10%; left: 0; transform: rotate(-8deg); z-index: 2; }
+        .p2 { top: 25%; left: 40%; transform: rotate(10deg); z-index: 3; }
+        .p3 { bottom: 10%; left: 15%; transform: rotate(-5deg); z-index: 1; }
+
+        /* === SLIDE 4: GRID BULAT === */
+        .slide-grid { background-image: url('[[FOTO_BACKGROUND_2]]'); background-size: cover; background-position: center; justify-content: center; }
+        .grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(89, 13, 34, 0.7); z-index: 1; }
+        .grid-container { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; width: 90vw; }
+        .circle-photo { width: 22vw; height: 22vw; border-radius: 50%; object-fit: cover; border: 0.8vw solid #ffb3c6; box-shadow: 0 0 2vw rgba(255, 179, 198, 0.5); }
+        .center-text { color: white; text-align: center; width: 40vw; }
+        .center-text h2 { font-size: 5vw; color: #ffb3c6; margin-bottom: 2vh; }
+        .center-text p { font-size: 1.6vw; line-height: 1.6; }
+
+        /* === SLIDE 5: COLLAGE FAVORIT === */
+        .slide-collage { justify-content: space-between; }
+        .collage-text { width: 40%; }
+        .collage-text h2 { font-size: 4vw; color: #d81159; margin-bottom: 2vh; }
+        .collage-text p { font-size: 1.5vw; line-height: 1.8; color: #555; margin-bottom: 1.5vh; }
+        
+        .collage-group { width: 55%; height: 80vh; position: relative; }
+        .collage-item { position: absolute; border-radius: 1vw; box-shadow: 0.5vw 0.5vw 2vw rgba(0,0,0,0.1); object-fit: cover; border: 0.5vw solid white; }
+        .c1 { width: 20vw; height: 20vw; top: 0; left: 0; z-index: 2; }
+        .c2 { width: 22vw; height: 30vw; top: 10%; left: 35%; z-index: 1; }
+        .c3 { width: 15vw; height: 15vw; bottom: 5%; right: 5%; z-index: 3; }
+        .c4 { width: 22vw; height: 15vw; bottom: 0; left: 10%; z-index: 4; }
+
+        /* === SLIDE 6: TIMELINE === */
+        .slide-timeline { flex-direction: column; justify-content: center; align-items: center; }
+        .timeline-title { font-size: 5vw; color: #d81159; margin-bottom: 5vh; text-align: center; }
+        .timeline-container { display: flex; justify-content: space-between; width: 100%; gap: 3vw; }
+        .timeline-box { width: 33%; background: white; padding: 2vw; border-radius: 1.5vw; text-align: center; box-shadow: 0 1vw 2vw rgba(216, 17, 89, 0.05); }
+        .timeline-box img { width: 100%; height: 20vh; object-fit: cover; border-radius: 1vw; margin-bottom: 2vh; }
+        .timeline-box h3 { color: #d81159; font-size: 2vw; margin-bottom: 1vh; }
+        .timeline-box p { color: #555; font-size: 1.2vw; }
+
+        /* === SLIDE 7: SURAT === */
+        .slide-letter { justify-content: space-between; background-color: white; }
+        .big-photo { width: 40%; height: 80vh; object-fit: cover; border-radius: 2vw; box-shadow: -1.5vw 1.5vw 0px #ffb3c6; }
+        .letter-box { width: 55%; }
+        .letter-box h2 { font-size: 4vw; color: #d81159; margin-bottom: 3vh; border-bottom: 0.3vw dashed #ffb3c6; display: inline-block; }
+        .letter-box p { font-size: 1.5vw; line-height: 1.9; color: #444; margin-bottom: 2vh; text-align: justify; }
+
+        /* === SLIDE 8: GALLERY === */
+        .slide-gallery { background-color: #ffb3c6; flex-direction: column; justify-content: center; }
+        .gallery-title { font-size: 5vw; color: white; margin-bottom: 5vh; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+        .gallery-wrapper { display: flex; justify-content: center; gap: 2vw; width: 100%; }
+        .gal-img { width: 18vw; height: 28vw; object-fit: cover; border: 0.8vw solid white; box-shadow: 0 1vw 2vw rgba(0,0,0,0.15); transition: transform 0.3s; }
+        .gal-img:hover { transform: scale(1.1) !important; z-index: 10; }
+        .g1 { transform: rotate(-8deg); }
+        .g2 { transform: rotate(5deg) translateY(-2vw); }
+        .g3 { transform: rotate(-3deg) translateY(1.5vw); }
+        .g4 { transform: rotate(8deg) translateY(-1vw); }
+
+        /* === SLIDE 9: OUTRO === */
+        .slide-outro { background-image: url('[[FOTO_BACKGROUND_3]]'); background-size: cover; background-position: center; justify-content: center; text-align: center; }
+        .outro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(255, 179, 198, 0.95), rgba(255, 179, 198, 0.4)); z-index: 1; }
+        .outro-content { position: relative; z-index: 2; color: #590d22; }
+        .outro-content h1 { font-size: 10vw; color: #d81159; text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.8); line-height: 1; }
+        .outro-content h3 { font-size: 3vw; margin-top: 1vh; }
+
+    </style>
+</head>
+<body>
+
+    <!-- MUSIK BACKSOUND -->
+    <audio autoplay loop>
+        <source src="[[MUSIK]]" type="audio/mpeg">
+    </audio>
+
+    <!-- LAYAR ROTATE UNTUK HP -->
+    <div id="rotate-device">
+        <h1 class="handwriting">Oopsie! 🙈</h1>
+        <p>Putar miring (Landscape) HP kamu dulu ya sayang,<br>biar liat kejutannya full layar! 💖✨</p>
+    </div>
+
+    <div class="main-content">
+        
+        <!-- SLIDE 1: HERO -->
+        <div class="slide slide-hero">
+            <div class="overlay"></div>
+            <div class="hero-content">
+                <h1 class="handwriting anim">[[TEKS_JUDUL_UTAMA]]</h1>
+                <p class="anim d-1">[[TEKS_SUB_JUDUL]]</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: GRID FOTO MIRING (NEW - SEPERTI REFERENSI FOTO) -->
+        <div class="slide slide-photo-grid">
+            <div class="tilted-grid-container">
+                <div class="tilted-grid">
+                    <!-- FOTO UNTUK BACKGROUND GRID (Saya sediakan 8 format, dan diulang otomatis agar memenuhi layar) -->
+                    <img src="[[FOTO_GRID_1]]" alt="Grid 1"> <img src="[[FOTO_GRID_2]]" alt="Grid 2"> <img src="[[FOTO_GRID_3]]" alt="Grid 3"> 
+                    <img src="[[FOTO_GRID_4]]" alt="Grid 4"> <img src="[[FOTO_GRID_5]]" alt="Grid 5"> <img src="[[FOTO_GRID_6]]" alt="Grid 6">
+                    <img src="[[FOTO_GRID_7]]" alt="Grid 7"> <img src="[[FOTO_GRID_8]]" alt="Grid 8"> <img src="[[FOTO_GRID_1]]" alt="Grid 1">
+                    <img src="[[FOTO_GRID_2]]" alt="Grid 2"> <img src="[[FOTO_GRID_3]]" alt="Grid 3"> <img src="[[FOTO_GRID_4]]" alt="Grid 4">
+                    <img src="[[FOTO_GRID_5]]" alt="Grid 5"> <img src="[[FOTO_GRID_6]]" alt="Grid 6"> <img src="[[FOTO_GRID_7]]" alt="Grid 7">
+                    <img src="[[FOTO_GRID_8]]" alt="Grid 8"> <img src="[[FOTO_GRID_1]]" alt="Grid 1"> <img src="[[FOTO_GRID_2]]" alt="Grid 2">
+                </div>
+            </div>
+            
+            <div class="grid-dark-overlay"></div>
+            
+            <div class="grid-text-content anim">
+                <span class="huge-number serif">[[TEKS_GRID_ANGKA_AWAL]]</span>
+                <div class="grid-text-lines serif">
+                    <span>[[TEKS_GRID_BARIS_1]]</span>
+                    <span>[[TEKS_GRID_BARIS_2]]</span>
+                </div>
+                <span class="huge-number serif">[[TEKS_GRID_ANGKA_AKHIR]]</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: POLAROID -->
+        <div class="slide slide-polaroid">
+            <div class="text-box anim">
+                <h2 class="handwriting">[[TEKS_QUOTE_1]]</h2>
+                <p>[[TEKS_ALASAN_CINTA]]</p>
+            </div>
+            <div class="polaroid-group">
+                <div class="polaroid p1 anim d-1"><img src="[[FOTO_POLAROID_1]]" alt="Foto 1"></div>
+                <div class="polaroid p2 anim d-2"><img src="[[FOTO_POLAROID_2]]" alt="Foto 2"></div>
+                <div class="polaroid p3 anim d-3"><img src="[[FOTO_POLAROID_3]]" alt="Foto 3"></div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: GRID BULAT -->
+        <div class="slide slide-grid">
+            <div class="grid-overlay"></div>
+            <div class="grid-container">
+                <img src="[[FOTO_BULAT_1]]" class="circle-photo anim d-1" alt="Foto 1">
+                <div class="center-text anim d-2">
+                    <h2 class="handwriting">[[TEKS_FAKTA_JUDUL]]</h2>
+                    <p>[[TEKS_FAKTA_ISI]]</p>
+                </div>
+                <img src="[[FOTO_BULAT_2]]" class="circle-photo anim d-3" alt="Foto 2">
+            </div>
+        </div>
+
+        <!-- SLIDE 5: FAVORITE THINGS -->
+        <div class="slide slide-collage">
+            <div class="collage-text anim">
+                <h2 class="handwriting">[[TEKS_FAVORIT_JUDUL]]</h2>
+                <p>[[TEKS_FAVORIT_ISI_1]]</p>
+                <p>[[TEKS_FAVORIT_ISI_2]]</p>
+            </div>
+            <div class="collage-group">
+                <img src="[[FOTO_KOLASE_1]]" class="collage-item c1 anim d-1" alt="Kolase 1">
+                <img src="[[FOTO_KOLASE_2]]" class="collage-item c2 anim d-2" alt="Kolase 2">
+                <img src="[[FOTO_KOLASE_3]]" class="collage-item c3 anim d-3" alt="Kolase 3">
+                <img src="[[FOTO_KOLASE_4]]" class="collage-item c4 anim d-4" alt="Kolase 4">
+            </div>
+        </div>
+
+        <!-- SLIDE 6: TIMELINE -->
+        <div class="slide slide-timeline">
+            <h2 class="handwriting timeline-title anim">[[TEKS_JOURNEY_JUDUL]]</h2>
+            <div class="timeline-container">
+                <div class="timeline-box anim d-1">
+                    <img src="[[FOTO_JOURNEY_1]]" alt="Journey 1">
+                    <h3 class="handwriting">[[TEKS_JOURNEY_WAKTU_1]]</h3>
+                    <p>[[TEKS_JOURNEY_CERITA_1]]</p>
+                </div>
+                <div class="timeline-box anim d-2">
+                    <img src="[[FOTO_JOURNEY_2]]" alt="Journey 2">
+                    <h3 class="handwriting">[[TEKS_JOURNEY_WAKTU_2]]</h3>
+                    <p>[[TEKS_JOURNEY_CERITA_2]]</p>
+                </div>
+                <div class="timeline-box anim d-3">
+                    <img src="[[FOTO_JOURNEY_3]]" alt="Journey 3">
+                    <h3 class="handwriting">[[TEKS_JOURNEY_WAKTU_3]]</h3>
+                    <p>[[TEKS_JOURNEY_CERITA_3]]</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: SURAT CINTA -->
+        <div class="slide slide-letter">
+            <img src="[[FOTO_SPECIAL]]" class="big-photo anim d-1" alt="Foto Special">
+            <div class="letter-box anim d-2">
+                <h2 class="handwriting">[[TEKS_JUDUL_SURAT]]</h2>
+                <p>[[TEKS_PESAN_PANJANG_PARAGRAF_1]]</p>
+                <p>[[TEKS_PESAN_PANJANG_PARAGRAF_2]]</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: MINI GALLERY -->
+        <div class="slide slide-gallery">
+            <h2 class="handwriting gallery-title anim">[[TEKS_GALLERY_JUDUL]]</h2>
+            <div class="gallery-wrapper">
+                <img src="[[FOTO_GALLERY_1]]" class="gal-img g1 anim d-1" alt="Gallery 1">
+                <img src="[[FOTO_GALLERY_2]]" class="gal-img g2 anim d-2" alt="Gallery 2">
+                <img src="[[FOTO_GALLERY_3]]" class="gal-img g3 anim d-3" alt="Gallery 3">
+                <img src="[[FOTO_GALLERY_4]]" class="gal-img g4 anim d-4" alt="Gallery 4">
+            </div>
+        </div>
+
+        <!-- SLIDE 9: OUTRO -->
+        <div class="slide slide-outro">
+            <div class="outro-overlay"></div>
+            <div class="outro-content">
+                <h1 class="handwriting anim">[[TEKS_PENUTUP]]</h1>
+                <h3 class="handwriting anim d-1">[[TEKS_NAMA_PANGGILAN]]</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT ANIMASI SCROLL -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.3 
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            const animElements = document.querySelectorAll('.anim');
+            animElements.forEach(el => observer.observe(el));
+        });
+    </script>
+</body>
+</html>

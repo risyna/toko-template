@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Pacifico&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000; /* Hitam di awal untuk efek Matrix */
+            color: #333;
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: background-color 1.5s ease-in-out;
+        }
+
+        /* --- OVERLAY MULAI (Untuk Izin Mic & Autoplay Musik) --- */
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #ffb6c1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+        
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Nunito', sans-serif;
+            font-weight: bold;
+            color: white;
+            background-color: #ff6699;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 102, 153, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        #start-btn:active { transform: scale(0.95); }
+
+        /* --- STAGE 1: MATRIX BACKGROUND & TEKS INTRO --- */
+        #matrixCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            transition: opacity 1.5s ease;
+        }
+
+        #intro-stage {
+            position: absolute;
+            text-align: center;
+            z-index: 10;
+            transition: opacity 1s ease-in-out;
+            display: none; /* Disembunyikan sampai tombol mulai ditekan */
+        }
+
+        .intro-text {
+            font-family: 'Pacifico', cursive;
+            font-size: 3.5rem;
+            color: #ff6699;
+            opacity: 0;
+            transform: translateY(-20px);
+            text-shadow: 0 0 15px rgba(255, 102, 153, 0.8), 2px 2px 5px #000;
+        }
+        
+        /* Class untuk memicu animasi dari JS */
+        .animate-intro { animation: fadeInDown 1.5s forwards; }
+        .intro-text:nth-child(2) { animation-delay: 1s; }
+        .intro-text:nth-child(3) { animation-delay: 2s; }
+
+        @keyframes fadeInDown {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- STAGE 2: BINTANG JATUH (BACKGROUND KEDUA) --- */
+        #stars-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            opacity: 0; /* Tersembunyi di awal */
+            transition: opacity 1.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px white, 0 0 10px rgba(255,255,255,0.8);
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) scale(0); opacity: 0; }
+            10% { opacity: 1; scale: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(110vh) scale(0.5); opacity: 0; }
+        }
+
+        /* --- STAGE 3: KUE 5 LAPIS MANTUL --- */
+        #cake-stage {
+            position: absolute;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+            bottom: 20%;
+        }
+        
+        .cake-wrapper { position: relative; width: 220px; height: 300px; }
+
+        .layer {
+            position: absolute; left: 50%; opacity: 0;
+            transform-origin: bottom center; 
+        }
+
+        /* Keyframe Jatuh Mentok & Memantul (Elastis Halus) */
+        @keyframes dropBounce {
+            0% { transform: translateX(-50%) translateY(-600px) scale(1, 1); opacity: 0; }
+            45% { transform: translateX(-50%) translateY(0) scale(1, 1); opacity: 1; }
+            55% { transform: translateX(-50%) translateY(0) scale(1.08, 0.85); opacity: 1; } /* Elastis menekan saat mendarat */
+            70% { transform: translateX(-50%) translateY(-25px) scale(0.95, 1.05); opacity: 1; } /* Memantul ke atas */
+            85% { transform: translateX(-50%) translateY(0) scale(1.02, 0.98); opacity: 1; } /* Menekan lagi sedikit */
+            100% { transform: translateX(-50%) translateY(0) scale(1, 1); opacity: 1; } /* Stabil */
+        }
+
+        /* Jeda waktu diatur agar jatuh bergantian persis setelah yang bawah menetap */
+        .cake-layer1 { bottom: 0px; width: 190px; height: 40px; background-color: #d2a679; border-radius: 10px; animation: dropBounce 0.7s 0.5s forwards ease-in-out; }
+        .cake-layer2 { bottom: 40px; width: 180px; height: 40px; background-color: #ffccdc; border-radius: 5px; animation: dropBounce 0.7s 0.9s forwards ease-in-out; }
+        .cake-layer3 { bottom: 80px; width: 170px; height: 40px; background-color: #cda885; border-radius: 5px; animation: dropBounce 0.7s 1.3s forwards ease-in-out; }
+        .icing { bottom: 120px; width: 180px; height: 35px; background-color: #ff6699; border-radius: 20px 20px 10px 10px; animation: dropBounce 0.7s 1.7s forwards ease-in-out; }
+        .candle { bottom: 155px; width: 16px; height: 60px; background: repeating-linear-gradient(45deg, white, white 5px, #ffb6c1 5px, #ffb6c1 10px); border-radius: 4px; animation: dropBounce 0.7s 2.1s forwards ease-in-out; }
+
+        .flame {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%); width: 22px; height: 32px;
+            background-color: #ffcc00; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 0 15px #ffcc00, 0 0 30px #ff9900; opacity: 0;
+            animation: lightUp 0.5s 2.9s forwards, flicker 0.1s 3.4s infinite alternate;
+            cursor: pointer; z-index: 100; transition: opacity 0.3s;
+        }
+
+        .flame-hint {
+            position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%);
+            font-size: 1.1rem; color: #ff3377; font-weight: bold; background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            opacity: 0; white-space: nowrap; animation: fadeInDown 1s 3.6s forwards;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes lightUp { to { opacity: 1; } }
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+        }
+
+        /* --- STAGE 4: BUKU 3D LUCU --- */
+        #book-stage {
+            position: absolute; display: none; opacity: 0; transition: opacity 1.5s ease-in-out;
+            perspective: 1500px; transform: translateY(20px);
+            animation: floatBook 3s infinite ease-in-out alternate; z-index: 10;
+        }
+
+        @keyframes floatBook { to { transform: translateY(-5px); } }
+
+        .book { position: relative; width: 320px; height: 420px; transform-style: preserve-3d; }
+
+        .page {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            transform-origin: left center; transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1); cursor: pointer;
+        }
+
+        #page1 { z-index: 5; } #page2 { z-index: 4; } #page3 { z-index: 3; } #page4 { z-index: 2; } #page5 { z-index: 1; }
+
+        .page.flipped { transform: rotateY(-180deg); }
+
+        .front, .back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            background-color: #fffaf0; border-radius: 5px 20px 20px 5px; padding: 25px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border: 2px dashed #ff99cc; box-shadow: inset 0 0 20px rgba(255, 182, 193, 0.3), 3px 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .back { transform: rotateY(180deg); border-radius: 20px 5px 5px 20px; }
+
+        #page1 .front, #page5 .back {
+            background-color: #ffb6c1; border: 4px solid #fff;
+            box-shadow: inset 0 0 0 5px #ff99cc, 5px 10px 20px rgba(0,0,0,0.2); color: white;
+        }
+
+        .front h2, .back h2 { font-family: 'Pacifico', cursive; color: #ff6699; margin-bottom: 15px; text-align: center; font-size: 1.8rem; }
+        #page1 .front h2, #page5 .back h2 { color: white; text-shadow: 2px 2px 0 #ff6699; }
+        .front img, .back img { width: 100%; height: 180px; object-fit: cover; border-radius: 15px; margin-bottom: 15px; border: 3px solid #ffe4e1; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .text-content { font-size: 1rem; text-align: center; font-weight: 700; color: #555; line-height: 1.4; }
+        #page1 .front .text-content, #page5 .back .text-content { color: white; }
+        .click-hint-right { position: absolute; right: 15px; bottom: 15px; font-size: 12px; color: #ff6699; font-weight: bold; animation: pulse 1s infinite; }
+        .click-hint-left { position: absolute; left: 15px; bottom: 15px; font-size: 12px; color: #ff6699; font-weight: bold; animation: pulse 1s infinite; }
+
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .ribbon { width: 100%; height: 30px; background: #fff; position: absolute; top: 20%; left: 0; opacity: 0.5; }
+
+        /* --- OVERLAY ROTATE HP --- */
+        #rotate-device-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #ff6699;
+            z-index: 99999;
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #rotate-device-overlay h2 { font-family: 'Pacifico', cursive; font-size: 2rem; margin-top: 10px; }
+        .phone-icon { font-size: 4rem; animation: rotatePhone 2s infinite ease-in-out; }
+        @keyframes rotatePhone {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+        /* Tampilkan overlay ini jika dibuka di HP dengan posisi berdiri (portrait) */
+        @media screen and (orientation: portrait) and (max-width: 768px) {
+            #rotate-device-overlay { display: flex; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- OVERLAY MINTA PUTAR LAYAR HP -->
+    <div id="rotate-device-overlay">
+        <div class="phone-icon">📱</div>
+        <h2>Tolong putar HP kamu ya!</h2>
+        <p>Biar kejutannya kelihatan lebih bagus 🔄</p>
+    </div>
+
+    <!-- AUDIO BACKGROUND -->
+    <!-- Ganti src di bawah dengan link lagu MP3 Anda -->
+    <audio id="bgMusic" loop>
+        <source src="[[MUSIK_BACKGROUND_MP3]]" type="audio/mpeg">
+    </audio>
+
+    <!-- OVERLAY MULAI -->
+    <div id="start-overlay">
+        <h2 style="font-family: 'Pacifico', cursive; color: white; margin-bottom: 20px; font-size: 2rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);">
+            Ada Sesuatu Buat Kamu!
+        </h2>
+        <button id="start-btn">Mulai</button>
+        <p style="margin-top: 15px; font-size: 0.9rem; color: #fff; font-weight: bold; text-align: center; padding: 0 20px;">
+            (Izinkan akses mikrofon jika muncul notifikasi, <br>supaya bisa tiup lilin beneran! 💨)
+        </p>
+    </div>
+
+    <!-- STAGE 1: MATRIX -->
+    <canvas id="matrixCanvas"></canvas>
+    <div id="intro-stage">
+        <div class="intro-text">Happy</div>
+        <div class="intro-text">Birthday</div>
+        <div class="intro-text">[[TEKS_PANGGILAN]]</div>
+    </div>
+
+    <!-- STAGE 2: BINTANG -->
+    <div id="stars-container"></div>
+
+    <!-- STAGE 3: KUE & LILIN -->
+    <div id="cake-stage">
+        <div class="cake-wrapper">
+            <div class="layer cake-layer1"></div>
+            <div class="layer cake-layer2"></div>
+            <div class="layer cake-layer3"></div>
+            <div class="layer icing"></div>
+            <div class="layer candle">
+                <!-- Flame ini akan ditiup via mic atau diklik jika mic gagal -->
+                <div class="flame" id="flame" onclick="blowOutCandle()"></div>
+            </div>
+        </div>
+        <div class="flame-hint" id="flame-hint">[[TEKS_INSTRUKSI_TIUP]]</div>
+    </div>
+
+    <!-- STAGE 4: BUKU -->
+    <div id="book-stage">
+        <div class="book">
+            <!-- HALAMAN 1 -->
+            <div class="page" id="page1">
+                <div class="front" onclick="turnPage(1, true)">
+                    <div class="ribbon"></div>
+                    <h2>[[TEKS_HAL_1_JUDUL]]</h2>
+                    <img src="[[FOTO_SAMPUL_BUKU]]" alt="Cover">
+                    <p class="text-content">[[TEKS_HAL_1_KONTEN]]</p>
+                    <span class="click-hint-right">Buka yuk 👉</span>
+                </div>
+                <div class="back" onclick="turnPage(1, false)">
+                    <h2>[[TEKS_HAL_1_BALIK_JUDUL]]</h2>
+                    <p class="text-content">[[TEKS_HAL_1_BALIK_KONTEN]]</p>
+                    <span class="click-hint-left">👈 Tutup</span>
+                </div>
+            </div>
+            
+            <!-- HALAMAN 2 -->
+            <div class="page" id="page2">
+                <div class="front" onclick="turnPage(2, true)">
+                    <h2>[[TEKS_HAL_2_JUDUL]]</h2>
+                    <img src="[[FOTO_HALAMAN_2]]" alt="Pic">
+                    <p class="text-content">[[TEKS_HAL_2_KONTEN]]</p>
+                    <span class="click-hint-right">Lanjut 👉</span>
+                </div>
+                <div class="back" onclick="turnPage(2, false)">
+                    <h2>[[TEKS_HAL_2_BALIK_JUDUL]]</h2>
+                    <img src="[[FOTO_HALAMAN_2_BALIK]]" alt="Pic">
+                    <p class="text-content">[[TEKS_HAL_2_BALIK_KONTEN]]</p>
+                    <span class="click-hint-left">👈 Balik</span>
+                </div>
+            </div>
+
+            <!-- HALAMAN 3 -->
+            <div class="page" id="page3">
+                <div class="front" onclick="turnPage(3, true)">
+                    <h2>[[TEKS_HAL_3_JUDUL]]</h2>
+                    <img src="[[FOTO_HALAMAN_3]]" alt="Pic">
+                    <p class="text-content">[[TEKS_HAL_3_KONTEN]]</p>
+                    <span class="click-hint-right">Lanjut 👉</span>
+                </div>
+                <div class="back" onclick="turnPage(3, false)">
+                    <h2>[[TEKS_HAL_3_BALIK_JUDUL]]</h2>
+                    <p class="text-content">[[TEKS_HAL_3_BALIK_KONTEN]]</p>
+                    <span class="click-hint-left">👈 Balik</span>
+                </div>
+            </div>
+
+            <!-- HALAMAN 4 -->
+            <div class="page" id="page4">
+                <div class="front" onclick="turnPage(4, true)">
+                    <h2>[[TEKS_HAL_4_JUDUL]]</h2>
+                    <img src="[[FOTO_HALAMAN_4]]" alt="Pic">
+                    <p class="text-content">[[TEKS_HAL_4_KONTEN]]</p>
+                    <span class="click-hint-right">Terakhir 👉</span>
+                </div>
+                <div class="back" onclick="turnPage(4, false)">
+                    <h2>[[TEKS_HAL_4_BALIK_JUDUL]]</h2>
+                    <p class="text-content">[[TEKS_HAL_4_BALIK_KONTEN]]</p>
+                    <span class="click-hint-left">👈 Balik</span>
+                </div>
+            </div>
+
+            <!-- HALAMAN 5 -->
+            <div class="page" id="page5">
+                <div class="front" onclick="turnPage(5, true)">
+                    <h2>[[TEKS_HAL_5_JUDUL]]</h2>
+                    <img src="[[FOTO_HALAMAN_5]]" alt="Pic">
+                    <p class="text-content">[[TEKS_HAL_5_KONTEN]]</p>
+                    <span class="click-hint-right">Tutup Buku 👉</span>
+                </div>
+                <div class="back" onclick="turnPage(5, false)">
+                    <div class="ribbon"></div>
+                    <h2>[[TEKS_HAL_5_BALIK_JUDUL]]</h2>
+                    <p class="text-content" style="font-size: 3rem;">[[TEKS_HAL_5_EMOJI]]</p>
+                    <p class="text-content" style="margin-top:20px;">[[TEKS_HAL_5_AKHIR]]</p>
+                    <span class="click-hint-left">👈 Buka lagi</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL VARIABLES UNTUK MIC & AUDIO ---
+        let audioContext;
+        let microphoneStream;
+        let analyser;
+        let isCandleBlown = false;
+        let isCandleReadyToBlow = false; // Mencegah ditiup sblm lilin muncul
+
+        // --- MENGATUR JALANNYA PROGRAM DARI TOMBOL MULAI ---
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            // Sembunyikan overlay
+            document.getElementById('start-overlay').style.opacity = '0';
+            setTimeout(() => { document.getElementById('start-overlay').style.display = 'none'; }, 1000);
+
+            // Putar Musik Background
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.play().catch(e => console.log("Musik gagal diputar: ", e));
+
+            // Setup Mikrofon untuk Lilin
+            await initMicrophone();
+
+            // Mulai Animasi Matrix
+            startAnimasiMatrix();
+        });
+
+        // --- FUNGSI DETEKSI TIUPAN (MICROPHONE) ---
+        async function initMicrophone() {
+            try {
+                microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(microphoneStream);
+                
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                function checkVolume() {
+                    if (isCandleBlown) return; // Berhenti mengecek jika sudah tertiup
+
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i];
+                    }
+                    let average = sum / bufferLength;
+
+                    // Jika suara cukup keras (tiupan angin) dan lilin sudah siap di layar
+                    if (average > 80 && isCandleReadyToBlow) {
+                        blowOutCandle();
+                    } else {
+                        requestAnimationFrame(checkVolume);
+                    }
+                }
+                checkVolume();
+            } catch (err) {
+                console.log("Izin mic ditolak atau tidak ada mic. Gunakan klik sebagai cadangan.");
+            }
+        }
+
+        // --- LOGIKA MATRIX PINK BERJATUHAN ---
+        let matrixInterval;
+        function startAnimasiMatrix() {
+            const canvas = document.getElementById('matrixCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const characters = '♥01HAPPYBIRTHDAY01♥'; 
+            const fontSize = 18;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+            for(let x = 0; x < columns; x++) drops[x] = 1;
+
+            function drawMatrix() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff6699'; 
+                ctx.font = fontSize + 'px monospace';
+
+                for(let i = 0; i < drops.length; i++) {
+                    const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }
+            matrixInterval = setInterval(drawMatrix, 40);
+
+            // Tampilkan Teks Intro
+            const introStage = document.getElementById('intro-stage');
+            introStage.style.display = 'block';
+            const introTexts = document.querySelectorAll('.intro-text');
+            introTexts.forEach(el => el.classList.add('animate-intro'));
+
+            // Jadwalkan pergantian ke Tahap Kue
+            setTimeout(transisiKeKue, 5000); 
+        }
+
+        // --- BINTANG JATUH (Dibuat otomatis) ---
+        const starsContainer = document.getElementById('stars-container');
+        for (let i = 0; i < 60; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            let size = Math.random() * 4 + 2; 
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.animationDuration = Math.random() * 3 + 3 + 's';
+            star.style.animationDelay = Math.random() * 5 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        // --- FUNGSI TRANSISI KE KUE ---
+        function transisiKeKue() {
+            const intro = document.getElementById('intro-stage');
+            const matrix = document.getElementById('matrixCanvas');
+            intro.style.opacity = '0';
+            matrix.style.opacity = '0';
+            
+            setTimeout(() => {
+                intro.style.display = 'none';
+                matrix.style.display = 'none';
+                clearInterval(matrixInterval);
+
+                document.body.style.backgroundColor = '#ffc0cb'; 
+                starsContainer.style.opacity = '1';
+
+                const cakeStage = document.getElementById('cake-stage');
+                cakeStage.style.display = 'flex';
+
+                // Izinkan lilin ditiup setelah animasi kue (dan api menyala) selesai
+                setTimeout(() => {
+                    isCandleReadyToBlow = true;
+                }, 4500);
+
+            }, 1000); 
+        }
+
+        // --- FUNGSI TIUP LILIN ---
+        function blowOutCandle() {
+            if (isCandleBlown) return; // Cegah terpanggil 2 kali
+            isCandleBlown = true;
+            isCandleReadyToBlow = false;
+
+            // Matikan stream microphone agar indikator record merah di HP hilang
+            if (microphoneStream) {
+                microphoneStream.getTracks().forEach(track => track.stop());
+            }
+
+            const flame = document.getElementById('flame');
+            const hint = document.getElementById('flame-hint');
+            
+            flame.style.animation = 'none';
+            flame.style.opacity = '0';
+            hint.style.opacity = '0';
+
+            document.body.style.backgroundColor = '#ffb6c1'; 
+
+            setTimeout(() => {
+                const cakeStage = document.getElementById('cake-stage');
+                cakeStage.style.opacity = '0'; 
+
+                setTimeout(() => {
+                    cakeStage.style.display = 'none';
+                    const bookStage = document.getElementById('book-stage');
+                    bookStage.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        bookStage.style.opacity = '1';
+                    }, 100);
+                }, 1000);
+            }, 1000);
+        }
+
+        // --- FUNGSI BUKA BUKU ---
+        function turnPage(pageIndex, isFlippingForward) {
+            const page = document.getElementById('page' + pageIndex);
+            if (isFlippingForward) {
+                page.classList.add('flipped');
+                setTimeout(() => { page.style.zIndex = pageIndex; }, 400); 
+            } else {
+                page.classList.remove('flipped');
+                setTimeout(() => { page.style.zIndex = 6 - pageIndex; }, 400);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('matrixCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
