@@ -11,7 +11,7 @@
         /* Layar Loading */
         #loading {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #140520; color: #fff; z-index: 100;
+            background: #1a0525; color: #fff; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 1.5s ease-out;
         }
@@ -34,6 +34,7 @@
             max-width: 400px;
             box-shadow: 0 4px 20px rgba(255, 0, 255, 0.2);
             transition: opacity 1s;
+            opacity: 0; 
         }
     </style>
     <!-- Memuat Three.js -->
@@ -54,11 +55,11 @@
 
     <div id="canvas-container"></div>
     
-    <div id="hint">Tarik dari atas dan ketuk tombol kembali untuk keluar dari mode layar penuh.<br><br><span style="font-size:11px; opacity: 0.8; color: #00ffff;">(Sentuh layar untuk mengaktifkan musik)</span></div>
+    <div id="hint">Geser untuk menjelajah angkasa</div>
 
     <script>
         // ============================================================================
-        // PENGATURAN FOTO (TERHUBUNG KE SISTEM UPLOAD TEMPLATE)
+        // PENGATURAN FOTO 
         // ============================================================================
         const DAFTAR_LINK_FOTO = [
             "[[FOTO_1]]", "[[FOTO_2]]", "[[FOTO_3]]", "[[FOTO_4]]", "[[FOTO_5]]",
@@ -75,14 +76,13 @@
 
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        // Warna dasar diubah menjadi ungu gelap, bukan hitam pekat
+        // Mengembalikan warna dasar ke ungu gelap seperti awal
         scene.background = new THREE.Color(0x1a0525); 
-        // Fog disesuaikan agar warna latar lebih mendominasi
         scene.fog = new THREE.FogExp2(0x1a0525, 0.0006); 
 
-        // Posisi kamera sedikit lebih jauh
+        // POSISI KAMERA AWAL (Sangat dekat dengan planet)
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 5000);
-        camera.position.set(0, 100, 550); 
+        camera.position.set(0, 0, 120); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,10 +92,11 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxDistance = 2000;
+        controls.maxDistance = 2000; 
         controls.minDistance = 80;
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.8; 
+        controls.enabled = false; 
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
@@ -105,8 +106,10 @@
         scene.add(photoGroup);
 
         const comets = [];
+        let isIntroZooming = false; 
+        let isWaitingForClick = false; 
 
-        // --- 1. NEBULA BACKGROUND (SANGAT BERWARNA & BESAR) ---
+        // --- 1. NEBULA BACKGROUND (VERSI AWAL) ---
         function createNebulaGlows() {
             const createGlow = (color, x, y, z, scale, opacity) => {
                 const canvas = document.createElement('canvas');
@@ -118,7 +121,6 @@
                 const g = (color >> 8) & 255;
                 const b = color & 255;
                 
-                // Inti lebih terang, pinggiran memudar lambat
                 gradient.addColorStop(0, `rgba(${r},${g},${b},1)`);
                 gradient.addColorStop(0.4, `rgba(${r},${g},${b},0.6)`);
                 gradient.addColorStop(1, `rgba(0,0,0,0)`);
@@ -139,17 +141,16 @@
                 scene.add(sprite);
             };
 
-            // Warna warni raksasa menutupi langit angkasa
-            createGlow(0xff0088, 0, 0, -1200, 3500, 0.4);       // Pink raksasa di tengah belakang
-            createGlow(0x00ffff, 600, 300, -1000, 2500, 0.5);   // Cyan sangat besar di kanan atas
-            createGlow(0x8800ff, -600, -200, -900, 2500, 0.6);  // Ungu terang di kiri bawah
-            createGlow(0x00ff66, -400, 500, -1000, 2000, 0.4);  // Hijau neon di kiri atas
-            createGlow(0xffaa00, 400, -400, -900, 2200, 0.4);   // Oranye terang di kanan bawah
-            createGlow(0xffffff, 0, 0, -600, 1500, 0.2);        // Highlight putih di tengah
+            createGlow(0xff0088, 0, 0, -1200, 3500, 0.4); 
+            createGlow(0x00ffff, 600, 300, -1000, 2500, 0.5); 
+            createGlow(0x8800ff, -600, -200, -900, 2500, 0.6); 
+            createGlow(0x00ff66, -400, 500, -1000, 2000, 0.4); 
+            createGlow(0xffaa00, 400, -400, -900, 2200, 0.4); 
+            createGlow(0xffffff, 0, 0, -600, 1500, 0.2); 
         }
         createNebulaGlows();
 
-        // --- 2. PARTIKEL BINTANG & BINTANG MELINTAS ---
+        // --- 2. PARTIKEL BINTANG & KOMET ---
         function createStars() {
             const starCount = 8000;
             const starGeo = new THREE.BufferGeometry();
@@ -168,9 +169,8 @@
         createStars();
 
         function initComets() {
-            // Silinder meruncing: Kepala besar (2) di depan, ekor (0) di belakang
             const geom = new THREE.CylinderGeometry(2, 0, 300, 8);
-            geom.rotateX(Math.PI / 2); // Menghadap sumbu Z
+            geom.rotateX(Math.PI / 2); 
             const mat = new THREE.MeshBasicMaterial({ 
                 color: 0x88ffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending 
             });
@@ -178,7 +178,7 @@
             for(let i=0; i<10; i++) {
                 const mesh = new THREE.Mesh(geom, mat);
                 mesh.active = false;
-                mesh.position.set(9999, 9999, 9999); // Sembunyikan dulu
+                mesh.position.set(9999, 9999, 9999);
                 scene.add(mesh);
                 comets.push(mesh);
             }
@@ -187,28 +187,22 @@
         function spawnComet(comet) {
             comet.active = true;
             const side = Math.random() > 0.5 ? 1 : -1;
-            // Muncul dari pinggir jauh luar angkasa
             comet.position.set(
                 side * (1500 + Math.random() * 500),
                 (Math.random() - 0.5) * 1000,
                 (Math.random() - 0.5) * 2000
             );
-            // Menembak ke arah seberang
             const target = new THREE.Vector3(
                 -side * (1500 + Math.random() * 500),
                 (Math.random() - 0.5) * 1000,
                 (Math.random() - 0.5) * 2000
             );
-            
-            // Kecepatan lesatan kilat (Sangat Cepat)
             comet.velocity = new THREE.Vector3().subVectors(target, comet.position).normalize().multiplyScalar(40 + Math.random() * 30);
-            
-            // Arahkan kepala komet ke arah geraknya
             comet.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), comet.velocity.clone().normalize());
         }
         initComets();
 
-        // --- 3. PLANET PEARLESCENT & CINCIN PUTIH TEBAL ---
+        // --- 3. PLANET MAGENTA DI TENGAH ---
         const planetCenter = new THREE.Group();
         scene.add(planetCenter);
 
@@ -216,11 +210,11 @@
         planetCanvas.width = 512; planetCanvas.height = 512;
         const pCtx = planetCanvas.getContext('2d');
         const pGrad = pCtx.createLinearGradient(0, 0, 512, 512);
-        pGrad.addColorStop(0, "#ffff88"); 
-        pGrad.addColorStop(0.3, "#ff88ff"); 
-        pGrad.addColorStop(0.6, "#88ffff"); 
-        pGrad.addColorStop(0.8, "#d488ff"); 
-        pGrad.addColorStop(1, "#ffff88");
+        
+        pGrad.addColorStop(0, "#ff00ff"); 
+        pGrad.addColorStop(0.5, "#8800ff"); 
+        pGrad.addColorStop(1, "#ff0088"); 
+        
         pCtx.fillStyle = pGrad;
         pCtx.fillRect(0, 0, 512, 512);
         
@@ -228,9 +222,9 @@
             map: new THREE.CanvasTexture(planetCanvas),
             emissiveMap: new THREE.CanvasTexture(planetCanvas),
             emissive: 0xffffff,
-            emissiveIntensity: 0.9, 
-            roughness: 0.2,
-            metalness: 0.1,
+            emissiveIntensity: 0.6, 
+            roughness: 0.4,
+            metalness: 0.2,
         });
         
         const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(28, 64, 64), planetMat);
@@ -253,7 +247,7 @@
         
         planetCenter.add(r1, r2, r3);
 
-        // --- 4. SABUK FOTO (DISTRIBUSI MERATA) ---
+        // --- 4. SABUK FOTO ---
         function createDefaultTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 192;
@@ -313,7 +307,6 @@
         }
 
         async function initPhotos() {
-            // Saring URL: Abaikan yang kosong atau yang masih berupa teks mentah "[[...]]"
             let validUrls = DAFTAR_LINK_FOTO.filter(url => 
                 url && url.trim() !== "" && !url.includes("[[")
             );
@@ -329,15 +322,14 @@
             const totalTextures = textures.length;
             const instancesPerTexture = Math.ceil(TOTAL_FOTO / totalTextures);
 
-            const radiusMin = 130;  // PERBAIKAN: Jarak diperlebar agar bentuk lingkaran tengah (lubang) terlihat sangat jelas
-            const radiusMax = 700;  
+            const radiusMin = 130; 
+            const radiusMax = 700; 
 
-            // Tambahkan Garis Orbit Transparan agar pola lingkaran lebih tegas
             const orbitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04, side: THREE.DoubleSide });
             for(let r = radiusMin; r <= radiusMax; r += 40) {
                 const ringGeo = new THREE.RingGeometry(r, r + 0.8, 128); 
                 const ring = new THREE.Mesh(ringGeo, orbitMat);
-                ring.rotation.x = Math.PI / 2; // Datar sejajar sabuk foto
+                ring.rotation.x = Math.PI / 2; 
                 photoGroup.add(ring);
             }
 
@@ -357,26 +349,18 @@
                     if (globalIndex >= TOTAL_FOTO) break;
 
                     const angle = Math.random() * Math.PI * 2;
-                    
-                    // PERBAIKAN: Menggunakan Math.sqrt agar foto menyebar RATA di seluruh area lingkaran.
-                    // Ini mencegah penumpukan (clumping) di area tengah dekat planet.
                     const distribution = Math.sqrt(Math.random());
                     const r = radiusMin + distribution * (radiusMax - radiusMin);
                     
                     const x = Math.cos(angle) * r;
                     const z = Math.sin(angle) * r;
                     
-                    // PERBAIKAN: Sabuk foto dibuat lebih pipih (tipis) agar bentuk cincinnya jelas seperti piringan
-                    const ySpread = 10 + (distribution * 15); 
+                    const ySpread = 35 + (distribution * 25); 
                     const y = (Math.random() - 0.5) * ySpread;
 
                     dummy.position.set(x, y, z);
-                    
-                    // Menghadap luar
                     dummy.lookAt(0, y, 0);
                     dummy.rotation.y += Math.PI; 
-                    
-                    // Rotasi acak kecil agar natural
                     dummy.rotation.x += (Math.random() - 0.5) * 0.25;
                     dummy.rotation.z += (Math.random() - 0.5) * 0.25;
 
@@ -388,55 +372,69 @@
                 photoGroup.add(instancedMesh);
             }
 
-            photoGroup.rotation.x = 0.05;
-            photoGroup.rotation.z = -0.02;
+            photoGroup.rotation.x = 0;
+            photoGroup.rotation.z = 0;
 
+            // Selesaikan Loading
             const loadingScreen = document.getElementById('loading');
             loadingScreen.style.opacity = '0';
-            setTimeout(() => loadingScreen.style.display = 'none', 1500);
             
-            setupAudioAutoplay();
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                
+                // Menunggu interaksi dari pengguna (tanpa notifikasi UI)
+                isWaitingForClick = true; 
+
+                const startExperience = () => {
+                    if (!isWaitingForClick) return;
+                    isWaitingForClick = false;
+                    isIntroZooming = true;
+
+                    const bgm = document.getElementById('bgm');
+                    bgm.volume = 0.8;
+                    bgm.play().catch(e => console.log("Gagal memutar musik:", e));
+
+                    document.removeEventListener('click', startExperience);
+                    document.removeEventListener('touchstart', startExperience);
+                    document.removeEventListener('wheel', startExperience);
+                };
+
+                document.addEventListener('click', startExperience);
+                document.addEventListener('touchstart', startExperience, {passive: true});
+                document.addEventListener('wheel', startExperience, {passive: true});
+
+            }, 1500);
         }
 
         initPhotos();
 
-        // --- 5. HACK AUTOPLAY MUSIK ---
-        function setupAudioAutoplay() {
-            const bgm = document.getElementById('bgm');
-            bgm.volume = 0.8;
-            
-            const startMusic = () => {
-                if (bgm.paused) {
-                    bgm.play().catch(e => console.log("Menunggu interaksi"));
-                }
-                document.removeEventListener('click', startMusic);
-                document.removeEventListener('touchstart', startMusic);
-                document.removeEventListener('scroll', startMusic);
-                
-                setTimeout(() => {
-                    const hint = document.getElementById('hint');
-                    if(hint) hint.style.opacity = '0';
-                }, 4000);
-            };
-
-            bgm.play().catch(() => {
-                document.addEventListener('click', startMusic);
-                document.addEventListener('touchstart', startMusic, {passive: true});
-                document.addEventListener('scroll', startMusic, {passive: true});
-            });
+        function showHint() {
+            const hint = document.getElementById('hint');
+            hint.style.opacity = '1';
+            setTimeout(() => { hint.style.opacity = '0'; }, 6000);
         }
 
-        // --- 6. ANIMASI ---
+        // --- 5. ANIMASI & RENDER LOOP ---
         function animate() {
             requestAnimationFrame(animate);
 
-            planetMesh.rotation.y += 0.01; 
+            // LOGIKA ZOOM OUT AWAL
+            if (isWaitingForClick) {
+                // Kamera diam menunggu interaksi sentuhan layar
+            } else if (isIntroZooming) {
+                camera.position.z = THREE.MathUtils.lerp(camera.position.z, 500, 0.005);
+                camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.005);
+                
+                if (Math.abs(camera.position.z - 500) < 2) {
+                    isIntroZooming = false;
+                    controls.enabled = true;
+                    showHint(); 
+                }
+            } else {
+                controls.update(); 
+            }
 
-            r1.rotation.z -= 0.015;
-            r2.rotation.z += 0.012;
-            r3.rotation.z -= 0.01;
-
-            photoGroup.rotation.y -= 0.002; 
+            photoGroup.rotation.y -= 0.002; // Hanya sabuk foto yang tetap berputar perlahan
 
             if (starsGeom) {
                 const positions = starsGeom.attributes.position.array;
@@ -447,24 +445,18 @@
                 starsGeom.attributes.position.needsUpdate = true;
             }
 
-            // Animasi Kilatan Komet Lewat
             comets.forEach(comet => {
                 if(comet.active) {
                     comet.position.add(comet.velocity);
-                    // Reset jika sudah terlalu jauh keluar layar
                     if(comet.position.length() > 4000) {
                         comet.active = false;
                         comet.position.set(9999, 9999, 9999);
                     }
                 } else {
-                    // Muncul secara acak sesekali sebagai kilatan
-                    if(Math.random() < 0.008) {
-                        spawnComet(comet);
-                    }
+                    if(Math.random() < 0.008) spawnComet(comet);
                 }
             });
 
-            controls.update(); 
             renderer.render(scene, camera);
         }
 
