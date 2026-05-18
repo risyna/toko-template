@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Font Playfair (Elegan) dan Inter (Modern) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
     
     <script>
@@ -41,7 +40,6 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .glass-nav { background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); }
         
-        /* Animasi Marquee (Berjalan tanpa henti) */
         .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; }
         .marquee-track { display: inline-block; animation: scroll-left 25s linear infinite; }
         .marquee-track:hover { animation-play-state: paused; }
@@ -76,7 +74,7 @@
         <div id="view-home" class="block">
             <header class="flex justify-between items-center p-4 sticky top-0 z-40 bg-darker/80 backdrop-blur-md border-b border-white/5">
                 <div class="flex items-center gap-3">
-                    <img src=foto/logo.jpeg alt="Jvro Logo" class="w-9 h-9 rounded-lg object-contain bg-white p-0.5">
+                    <img src="file_0000000034507208b42dea429498c3cc.png" alt="Jvro Logo" class="w-9 h-9 rounded-lg object-contain bg-white p-0.5" onerror="this.src='https://ui-avatars.com/api/?name=JV&background=fff&color=000'">
                     <h1 class="text-xl font-bold tracking-wide text-white font-serif italic">Jvro</h1>
                 </div>
                 <div class="flex gap-4 text-lg text-gray-300">
@@ -174,7 +172,7 @@
                         <i class="fas fa-chevron-right text-gray-600 text-xs"></i>
                     </div>
                 </div>
-                <p class="text-center text-gray-600 text-xs mt-8 font-serif">Jvro Version 2.2.0<br>Powered by Vercel & Midtrans</p>
+                <p class="text-center text-gray-600 text-xs mt-8 font-serif">Jvro Version 2.2.1<br>Powered by Vercel & Midtrans</p>
             </div>
         </div>
 
@@ -191,8 +189,8 @@
                         <input type="text" id="input-profile-name" placeholder="Masukkan nama kamu..." class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-300 mb-2 font-medium font-serif">Email / WhatsApp Utama</label>
-                        <input type="text" id="input-profile-contact" placeholder="Untuk menerima info resi..." class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
+                        <label class="block text-sm text-gray-300 mb-2 font-medium font-serif">Email Utama</label>
+                        <input type="email" id="input-profile-contact" placeholder="email@anda.com" class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
                     </div>
                 </div>
                 <button onclick="saveProfile()" class="w-full bg-[#00a550] hover:bg-green-600 text-white font-serif font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition transform active:scale-95">
@@ -310,12 +308,9 @@
                     </ol>
                 </div>
                 <div class="w-full space-y-5 mb-10">
-                    
-                    <!-- Pilihan Metode Dihilangkan (Default disembunyikan dan di-set ke Email) -->
                     <select id="send-method" class="hidden">
                         <option value="email" selected>Email</option>
                     </select>
-                    
                     <div>
                         <label class="block text-sm text-gray-400 mb-2 font-medium">Alamat Email Penerima File:</label>
                         <input type="email" id="contact-info" placeholder="Contoh: nama@gmail.com" class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
@@ -327,7 +322,8 @@
                 </button>
             </div>
         </div>
-        
+    </div>
+
     <!-- BOTTOM NAV -->
     <nav id="bottom-nav" class="fixed bottom-0 w-full glass-nav flex justify-around items-center py-4 px-2 z-40 pb-safe border-t border-gray-800">
         <div id="nav-home" class="flex flex-col items-center text-white cursor-pointer transition-colors" onclick="goHome()">
@@ -354,110 +350,13 @@
         let currentTemplate = null;
         let currentCategory = 'html';
         let pendingGeneratedData = null; 
+        
+        // PENTING: Kosongkan jika backend (server.js) diletakkan menyatu (serverless) di Vercel yang sama.
+        // Jika server Anda terpisah, isi dengan URL server, contoh: 'https://api-jvro.vercel.app'
         const API_BASE_URL = ''; 
 
         // =========================================================================
-        // ROUTING SYSTEM (MENGATASI TOMBOL BACK & REFRESH)
-        // =========================================================================
-        function handleRouting() {
-            const hash = window.location.hash || '#home';
-            hideAllViews();
-            
-            let route = hash;
-            
-            // Mengecek jika URL memiliki ID (contoh: #detail-sayangflix)
-            if (hash.startsWith('#detail-') || hash.startsWith('#generate-') || hash.startsWith('#interactive-') || hash.startsWith('#preview-') || hash.startsWith('#checkout-')) {
-                const parts = hash.split('-');
-                route = parts[0]; 
-                const id = parts.slice(1).join('-'); 
-                currentTemplate = templates.find(t => t.id === id);
-            }
-
-            if (route === '#home') {
-                document.getElementById('view-home').classList.remove('hidden');
-                document.getElementById('bottom-nav').style.display = 'flex';
-                updateNavState('home');
-            } else if (route === '#history') {
-                renderHistoryView();
-                document.getElementById('view-history').classList.remove('hidden');
-                document.getElementById('bottom-nav').style.display = 'flex';
-                updateNavState('history');
-            } else if (route === '#profile') {
-                document.getElementById('view-profile').classList.remove('hidden');
-                document.getElementById('bottom-nav').style.display = 'flex';
-                updateNavState('profile');
-            } else if (route === '#edit-profile') {
-                let profile = JSON.parse(localStorage.getItem('jvro_profile')) || { name: '', contact: '' };
-                document.getElementById('input-profile-name').value = profile.name === 'Sobat Jvro' ? '' : profile.name;
-                document.getElementById('input-profile-contact').value = profile.contact === 'user@jvro.com' ? '' : profile.contact;
-                document.getElementById('view-edit-profile').classList.remove('hidden');
-            } else if (route === '#tnc') {
-                document.getElementById('view-tnc').classList.remove('hidden');
-            } else if (route === '#privacy') {
-                document.getElementById('view-privacy').classList.remove('hidden');
-            } else if (route === '#detail') {
-                if(!currentTemplate) return window.location.hash = '#home';
-                document.getElementById('detail-img').src = currentTemplate.image;
-                document.getElementById('detail-title').innerText = currentTemplate.title;
-                document.getElementById('detail-desc').innerText = currentTemplate.desc;
-                document.getElementById('view-detail').classList.remove('hidden');
-            } else if (route === '#generate') {
-                if(!currentTemplate) return window.location.hash = '#home';
-                document.getElementById('view-generate').classList.remove('hidden');
-                buildGenerateFormUI(); // Fungsi dipisah agar lebih aman saat refresh
-            } else if (route === '#interactive') {
-                if(!currentTemplate) return window.location.hash = '#home';
-                document.getElementById('view-interactive').classList.remove('hidden');
-                buildLivePreviewUI();
-            } else if (route === '#preview') {
-                // Jika di-refresh di halaman preview, data base64 akan hilang, kembalikan ke detail
-                if(!currentTemplate || !pendingGeneratedData) return window.location.hash = '#detail-' + (currentTemplate ? currentTemplate.id : '');
-                document.getElementById('view-preview-video').classList.remove('hidden');
-            } else if (route === '#checkout') {
-                if(!currentTemplate) return window.location.hash = '#home';
-                document.getElementById('view-checkout').classList.remove('hidden');
-            } else {
-                window.location.hash = '#home';
-            }
-        }
-
-        // --- SISTEM PERUBAHAN URL HASH ---
-        function goHome() { window.location.hash = '#home'; }
-        function goHistory() { window.location.hash = '#history'; }
-        function goProfile() { window.location.hash = '#profile'; }
-        function goEditProfile() { window.location.hash = '#edit-profile'; }
-        function goTnC() { window.location.hash = '#tnc'; }
-        function goPrivacy() { window.location.hash = '#privacy'; }
-        function goToDetail(id) { window.location.hash = '#detail-' + id; }
-        function goToGenerate() { window.location.hash = '#generate-' + currentTemplate.id; }
-        function showLivePreview() { window.location.hash = '#interactive-' + currentTemplate.id; }
-        function goToCheckout() { window.location.hash = '#checkout-' + currentTemplate.id; }
-        
-        function closeLivePreview() {
-            document.getElementById('interactive-frame').src = '';
-            history.back(); // Otomatis kembali ke hash sebelumnya (Detail)
-        }
-        function closePreviewVideo() {
-            document.getElementById('video-frame').src = '';
-            history.back(); 
-        }
-
-        function updateNavState(activeView) {
-            document.getElementById('nav-home').className = activeView === 'home' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
-            document.getElementById('nav-history').className = activeView === 'history' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
-            document.getElementById('nav-profile').className = activeView === 'profile' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
-        }
-
-        function hideAllViews() {
-            ['view-home', 'view-detail', 'view-generate', 'view-preview-video', 'view-checkout', 'view-interactive', 'view-history', 'view-profile', 'view-edit-profile', 'view-tnc', 'view-privacy'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
-            document.getElementById('bottom-nav').style.display = 'none';
-        }
-
-        // =========================================================================
-        // DATA PROFIL & RIWAYAT (LOCAL STORAGE)
+        // DEKLARASI FUNGSI PROFIL & DATA
         // =========================================================================
         function loadProfileData() {
             let profile = JSON.parse(localStorage.getItem('jvro_profile')) || { name: 'Sobat Jvro', contact: 'user@jvro.com' };
@@ -468,8 +367,13 @@
 
             if(nameDisplay) nameDisplay.innerText = profile.name;
             if(contactDisplay) contactDisplay.innerText = profile.contact;
-            
             if(avatarDisplay) avatarDisplay.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=333&color=fff`;
+            
+            // Auto isi form checkout dengan email yang tersimpan
+            const contactInput = document.getElementById('contact-info');
+            if(contactInput && profile.contact !== 'user@jvro.com') {
+                contactInput.value = profile.contact;
+            }
         }
 
         function saveProfile() {
@@ -478,7 +382,7 @@
             
             localStorage.setItem('jvro_profile', JSON.stringify({ name: newName, contact: newContact }));
             loadProfileData(); 
-            history.back(); // Kembali ke halaman profil
+            history.back(); 
         }
 
         function saveToHistory(tpl) {
@@ -518,7 +422,7 @@
                             <p class="text-[10px] text-gray-400"><i class="far fa-clock"></i> ${item.date}</p>
                             <p class="text-[10px] text-[#00a550] mt-1 font-bold"><i class="fas fa-check-circle"></i> Berhasil Dipesan</p>
                         </div>
-                        <button onclick="alert('File HTML untuk template [${item.title}] sudah dikirimkan otomatis ke Email / WhatsApp Anda pada tanggal ${item.date}. Silakan cek kotak masuk Anda.')" class="bg-white/10 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-brand transition shrink-0"><i class="fas fa-download"></i></button>
+                        <button onclick="alert('File HTML untuk template [${item.title}] diproses melalui sistem otomatis.\\n\\nSilakan cek kotak masuk atau folder SPAM pada Email yang Anda gunakan saat checkout pada tanggal ${item.date}.')" class="bg-white/10 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-brand transition shrink-0"><i class="fas fa-download"></i></button>
                     </div>
                 `;
             });
@@ -527,52 +431,167 @@
         }
 
         // =========================================================================
-        // PROSES PEMBAYARAN & PEMBANGUNAN HTML
+        // PROSES PEMBAYARAN (DENGAN PENANGANAN ERROR LEBIH DETAIL)
         // =========================================================================
         async function processPayment() {
             const contactInfo = document.getElementById('contact-info').value.trim();
             const sendMethod = document.getElementById('send-method').value;
             
-            if (!contactInfo) return alert('Mohon masukkan Nomor WhatsApp atau Email Anda.');
+            if (!contactInfo || !contactInfo.includes('@')) {
+                return alert('Mohon masukkan alamat Email yang valid (contoh: nama@gmail.com).');
+            }
 
             const btn = document.getElementById('btn-confirm-payment');
             const originalText = btn.innerHTML;
             
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-xl"></i> Menghubungkan...`;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-xl"></i> Menghubungkan ke Server...`;
             btn.disabled = true;
 
             try {
+                // 1. Menyusun file HTML final
                 const finalHtmlContent = await buildHTML(currentTemplate.id, pendingGeneratedData);
+                
+                // 2. Memanggil Backend/Node.js kita
                 const response = await fetch(`${API_BASE_URL}/api/checkout`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contact: contactInfo, sendMethod: sendMethod, templateName: currentTemplate.title, htmlData: finalHtmlContent })
+                    body: JSON.stringify({ 
+                        contact: contactInfo, 
+                        sendMethod: sendMethod, 
+                        templateName: currentTemplate.title, 
+                        htmlData: finalHtmlContent 
+                    })
                 });
 
-                if (!response.ok) throw new Error("Gagal terhubung ke kasir.");
+                // 3. Menangani jika backend bermasalah (Penyebab pop-up "Sistem Sedang Sibuk")
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`HTTP Error ${response.status}: ${errText}`);
+                }
+                
                 const result = await response.json();
                 
                 if (result.paymentUrl) {
                     saveToHistory(currentTemplate);
-                    window.location.href = result.paymentUrl;
+                    window.location.href = result.paymentUrl; // Bawa pembeli ke halaman Midtrans
                 } else {
-                    throw new Error("Gagal memuat link pembayaran Midtrans.");
+                    throw new Error("Respon API tidak memiliki paymentUrl.");
                 }
             } catch (error) {
-                console.error(error);
-                alert("Sistem sedang sibuk. Pastikan Midtrans Anda sudah aktif/Selesai ditinjau.");
+                console.error("DETAIL ERROR PEMBAYARAN:", error);
+                alert("GAGAL MENGHUBUNGI SERVER BACKEND.\n\nPesanan belum bisa diproses karena halaman antarmuka ini gagal terhubung ke file server.js Anda.\n\nSaran Perbaikan:\nPastikan Anda telah mendeploy folder/file backend (API) Anda dengan benar di Vercel dan sudah mengisi Environment Variables (Midtrans Server Key).\n\nKode Error: " + error.message);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         }
 
-        // --- SISTEM PEMBANGUNAN FORM DAN PREVIEW (Terpisah agar aman saat refresh) ---
+
+        // =========================================================================
+        // ROUTING SYSTEM (MENGATASI TOMBOL BACK & REFRESH)
+        // =========================================================================
+        function handleRouting() {
+            const hash = window.location.hash || '#home';
+            hideAllViews();
+            
+            let route = hash;
+            if (hash.startsWith('#detail-') || hash.startsWith('#generate-') || hash.startsWith('#interactive-') || hash.startsWith('#preview-') || hash.startsWith('#checkout-')) {
+                const parts = hash.split('-');
+                route = parts[0]; 
+                const id = parts.slice(1).join('-'); 
+                currentTemplate = templates.find(t => t.id === id);
+            }
+
+            if (route === '#home') {
+                document.getElementById('view-home').classList.remove('hidden');
+                document.getElementById('bottom-nav').style.display = 'flex';
+                updateNavState('home');
+            } else if (route === '#history') {
+                renderHistoryView();
+                document.getElementById('view-history').classList.remove('hidden');
+                document.getElementById('bottom-nav').style.display = 'flex';
+                updateNavState('history');
+            } else if (route === '#profile') {
+                document.getElementById('view-profile').classList.remove('hidden');
+                document.getElementById('bottom-nav').style.display = 'flex';
+                updateNavState('profile');
+            } else if (route === '#edit-profile') {
+                let profile = JSON.parse(localStorage.getItem('jvro_profile')) || { name: '', contact: '' };
+                document.getElementById('input-profile-name').value = profile.name === 'Sobat Jvro' ? '' : profile.name;
+                document.getElementById('input-profile-contact').value = profile.contact === 'user@jvro.com' ? '' : profile.contact;
+                document.getElementById('view-edit-profile').classList.remove('hidden');
+            } else if (route === '#tnc') {
+                document.getElementById('view-tnc').classList.remove('hidden');
+            } else if (route === '#privacy') {
+                document.getElementById('view-privacy').classList.remove('hidden');
+            } else if (route === '#detail') {
+                if(!currentTemplate) return window.location.hash = '#home';
+                document.getElementById('detail-img').src = currentTemplate.image;
+                document.getElementById('detail-title').innerText = currentTemplate.title;
+                document.getElementById('detail-desc').innerText = currentTemplate.desc;
+                document.getElementById('view-detail').classList.remove('hidden');
+            } else if (route === '#generate') {
+                if(!currentTemplate) return window.location.hash = '#home';
+                document.getElementById('view-generate').classList.remove('hidden');
+                buildGenerateFormUI(); 
+            } else if (route === '#interactive') {
+                if(!currentTemplate) return window.location.hash = '#home';
+                document.getElementById('view-interactive').classList.remove('hidden');
+                buildLivePreviewUI();
+            } else if (route === '#preview') {
+                if(!currentTemplate || !pendingGeneratedData) return window.location.hash = '#detail-' + (currentTemplate ? currentTemplate.id : '');
+                document.getElementById('view-preview-video').classList.remove('hidden');
+            } else if (route === '#checkout') {
+                if(!currentTemplate) return window.location.hash = '#home';
+                document.getElementById('view-checkout').classList.remove('hidden');
+            } else {
+                window.location.hash = '#home';
+            }
+        }
+
+        // --- SISTEM PERUBAHAN URL HASH ---
+        function goHome() { window.location.hash = '#home'; }
+        function goHistory() { window.location.hash = '#history'; }
+        function goProfile() { window.location.hash = '#profile'; }
+        function goEditProfile() { window.location.hash = '#edit-profile'; }
+        function goTnC() { window.location.hash = '#tnc'; }
+        function goPrivacy() { window.location.hash = '#privacy'; }
+        function goToDetail(id) { window.location.hash = '#detail-' + id; }
+        function goToGenerate() { window.location.hash = '#generate-' + currentTemplate.id; }
+        function showLivePreview() { window.location.hash = '#interactive-' + currentTemplate.id; }
+        function goToCheckout() { window.location.hash = '#checkout-' + currentTemplate.id; }
+        
+        function closeLivePreview() {
+            document.getElementById('interactive-frame').src = '';
+            history.back(); 
+        }
+        function closePreviewVideo() {
+            document.getElementById('video-frame').src = '';
+            history.back(); 
+        }
+
+        function updateNavState(activeView) {
+            document.getElementById('nav-home').className = activeView === 'home' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
+            document.getElementById('nav-history').className = activeView === 'history' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
+            document.getElementById('nav-profile').className = activeView === 'profile' ? 'flex flex-col items-center text-white cursor-pointer transition-colors' : 'flex flex-col items-center text-gray-500 cursor-pointer transition-colors';
+        }
+
+        function hideAllViews() {
+            ['view-home', 'view-detail', 'view-generate', 'view-preview-video', 'view-checkout', 'view-interactive', 'view-history', 'view-profile', 'view-edit-profile', 'view-tnc', 'view-privacy'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            document.getElementById('bottom-nav').style.display = 'none';
+        }
+
+
+        // =========================================================================
+        // SISTEM PEMBANGUNAN FORM DAN PREVIEW
+        // =========================================================================
         async function buildGenerateFormUI() {
             const form = document.getElementById('generator-form');
             const btn = document.getElementById('btn-submit-generate');
             const loader = document.getElementById('form-loading');
             
-            // Cek agar tidak berkedip jika di-refresh di halaman yang sama
             if (form.getAttribute('data-template') === currentTemplate.id && form.innerHTML !== '') {
                 form.classList.remove('hidden'); btn.classList.remove('hidden'); btn.classList.add('flex');
                 return;
@@ -584,7 +603,7 @@
             loader.classList.add('hidden');
             
             if(!tpl || !tpl.formConfig || tpl.formConfig.length === 0) {
-                form.innerHTML = '<div class="text-center text-red-500 bg-red-100/10 p-4 rounded-xl border border-red-500/30"><b>Error:</b> Gagal membaca file template.</div>';
+                form.innerHTML = '<div class="text-center text-red-500 bg-red-100/10 p-4 rounded-xl border border-red-500/30"><b>Error:</b> Gagal membaca file template. Pastikan folder templates sudah ter-upload ke Vercel.</div>';
                 form.classList.remove('hidden');
                 return;
             }
@@ -624,10 +643,9 @@
                 
                 setTimeout(() => { 
                     overlay.classList.add('hidden'); 
-                    // Pindah ke rute preview
                     window.location.hash = '#preview-' + currentTemplate.id; 
                 }, 1000);
-            } catch(e) { overlay.classList.add('hidden'); alert("Error sistem."); }
+            } catch(e) { overlay.classList.add('hidden'); alert("Error saat merakit preview."); }
         }
 
         async function analyzeTemplateConfig(templateId) {
@@ -686,7 +704,7 @@
             return html.replace(/\[\[.*?\]\]/g, '""');
         }
 
-        // --- SISTEM PENDUKUNG LAINNYA ---
+        // --- FUNGSI TAMPILAN AWAL ---
         function toggleSearch() {
             const container = document.getElementById('search-container');
             container.classList.toggle('hidden');
@@ -750,21 +768,20 @@
         // =========================================================================
         // INISIALISASI SAAT WEB PERTAMA KALI DIBUKA
         // =========================================================================
-        
-        // 1. Dengarkan jika pengguna menekan tombol Back atau URL berubah
         window.addEventListener('hashchange', handleRouting);
 
-        // 2. Jalankan fungsi dasar saat elemen sudah dimuat
         window.addEventListener('DOMContentLoaded', () => {
             setCategory('html');
             renderMarquee(); 
-            loadProfileData(); 
+            // Pastikan fungsi ini terpanggil dengan aman
+            if(typeof loadProfileData === "function") {
+                loadProfileData(); 
+            }
             
-            // Jika tidak ada URL khusus (baru buka awal), paksa ke #home
             if (!window.location.hash) {
                 window.location.hash = '#home';
             } else {
-                handleRouting(); // Render halaman berdasarkan # di URL
+                handleRouting(); 
             }
         });
     </script>
