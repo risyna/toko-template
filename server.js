@@ -35,9 +35,9 @@ if (!process.env.MIDTRANS_SERVER_KEY) {
 // 1. KONFIGURASI MIDTRANS
 // =========================================================================
 let snap = new midtransClient.Snap({
-    isProduction: true, 
-    serverKey: process.env.MIDTRANS_SERVER_KEY || 'KUNCI_KOSONG',
-    clientKey: process.env.MIDTRANS_CLIENT_KEY || 'KUNCI_KOSONG'
+    isProduction: true, // Ubah dari false menjadi true
+    serverKey: process.env.MIDTRANS_SERVER_KEY,
+    clientKey: process.env.MIDTRANS_CLIENT_KEY
 });
 
 // =========================================================================
