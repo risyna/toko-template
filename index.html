@@ -303,23 +303,23 @@
                 <div class="w-full bg-white/5 border border-white/10 rounded-xl p-5 mb-8 text-sm text-gray-300 font-light">
                     <p class="font-bold text-white mb-3 font-serif text-base"><i class="fas fa-info-circle text-brand mr-2"></i>Informasi Pengiriman:</p>
                     <ol class="list-decimal list-inside space-y-2">
-                        <li>Pilih tujuan pengiriman (WhatsApp / Email).</li>
-                        <li>Pastikan nomor/email aktif.</li>
+                        <li>Masukkan Alamat Email Anda yang aktif.</li>
+                        <li>Pastikan penulisan email sudah benar.</li>
                         <li>Klik "Bayar", lalu bayar menggunakan QRIS/E-Wallet.</li>
-                        <li>File HTML akan dikirim <b>otomatis</b> detik itu juga setelah sukses.</li>
+                        <li>File HTML akan dikirim <b>otomatis ke Email Anda</b> segera setelah sukses.</li>
                     </ol>
                 </div>
                 <div class="w-full space-y-5 mb-10">
+                    
+                    <!-- Pilihan Metode Dihilangkan (Default disembunyikan dan di-set ke Email) -->
+                    <select id="send-method" class="hidden">
+                        <option value="email" selected>Email</option>
+                    </select>
+                    
                     <div>
-                        <label class="block text-sm text-gray-400 mb-2 font-medium">Kirim File Melalui:</label>
-                        <select id="send-method" class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
-                            <option value="wa">WhatsApp</option>
-                            <option value="email">Email</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-2 font-medium">Nomor WA / Alamat Email:</label>
-                        <input type="text" id="contact-info" placeholder="Contoh: 0812xxxx / email@anda.com" class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
+                        <label class="block text-sm text-gray-400 mb-2 font-medium">Alamat Email Penerima File:</label>
+                        <input type="email" id="contact-info" placeholder="Contoh: nama@gmail.com" class="w-full bg-[#111] border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-white transition">
+                        <p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-exclamation-triangle text-yellow-500"></i> Pastikan email benar. File akan dikirim ke alamat ini.</p>
                     </div>
                 </div>
                 <button id="btn-confirm-payment" onclick="processPayment()" class="w-full bg-[#00a550] hover:bg-green-600 text-white font-serif font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-3 transition transform active:scale-95">
@@ -327,8 +327,7 @@
                 </button>
             </div>
         </div>
-    </div>
-
+        
     <!-- BOTTOM NAV -->
     <nav id="bottom-nav" class="fixed bottom-0 w-full glass-nav flex justify-around items-center py-4 px-2 z-40 pb-safe border-t border-gray-800">
         <div id="nav-home" class="flex flex-col items-center text-white cursor-pointer transition-colors" onclick="goHome()">
