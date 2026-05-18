@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const midtransClient = require('midtrans-client');
 const nodemailer = require('nodemailer');
-const path = require('path'); // Tambahan baru untuk membaca lokasi file
+const path = require('path');
 
 const app = express();
 
@@ -14,12 +14,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 
 // =========================================================================
-// TAMBAHAN BARU: Menampilkan File Halaman Web (Frontend)
+// Menampilkan File Halaman Web (Frontend)
 // =========================================================================
-// Mengizinkan server membaca file HTML, CSS, Gambar di folder ini
 app.use(express.static(__dirname));
 
-// Jika seseorang membuka link web utama ( / ), tampilkan index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -27,30 +25,31 @@ app.get('/', (req, res) => {
 // =========================================================================
 // PENGECEKAN KEAMANAN (.env)
 // =========================================================================
-if (!process.env.MIDTRANS_SERVER_KEY) {
-    console.warn("⚠️ PERINGATAN: File .env belum dibuat atau kunci Midtrans kosong!");
+if (!process.env.MIDTRANS_SERVER_KEY || !process.env.EMAIL_PASS) {
+    console.warn("⚠️ PERINGATAN: File .env belum dibuat atau kunci Midtrans/Email kosong!");
 }
 
 // =========================================================================
 // 1. KONFIGURASI MIDTRANS
 // =========================================================================
 let snap = new midtransClient.Snap({
-    isProduction: true, // Ubah dari false menjadi true
+    isProduction: true, // Pastikan Anda menggunakan Server Key Production di Vercel
     serverKey: process.env.MIDTRANS_SERVER_KEY,
-    clientKey: process.env.MIDTRANS_CLIENT_KEY
+    clientKey: process.env.MIDTRANS_CLIENT_KEY 
 });
 
 // =========================================================================
-// 2. KONFIGURASI EMAIL
+// 2. KONFIGURASI EMAIL (NODEMAILER)
 // =========================================================================
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER || 'email_kosong',
-        pass: process.env.EMAIL_PASS || 'password_kosong'
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS 
     }
 });
 
+// Penyimpanan sementara di memori
 const pendingOrders = {}; 
 
 // =========================================================================
@@ -59,7 +58,9 @@ const pendingOrders = {};
 app.post('/api/checkout', async (req, res) => {
     try {
         const { contact, sendMethod, htmlData, templateName } = req.body;
-        const orderId = "ORDER-" + Math.floor(Math.random() * 1000000);
+        
+        // PERBAIKAN: Menggunakan Date.now() agar Order ID tidak mungkin kembar
+        const orderId = "JVRO-" + Date.now();
 
         pendingOrders[orderId] = {
             contact: contact, 
@@ -67,6 +68,8 @@ app.post('/api/checkout', async (req, res) => {
             htmlData: htmlData, 
             status: 'PENDING'
         };
+        
+        console.log(`[CHECKOUT] Pesanan dibuat: ${orderId}. Menunggu pembayaran...`);
 
         let parameter = {
             "transaction_details": { 
@@ -75,8 +78,8 @@ app.post('/api/checkout', async (req, res) => {
             },
             "customer_details": {
                 "email": sendMethod === 'email' ? contact : 'customer@example.com',
-                "first_name": "Pembeli", 
-                "last_name": "Template"
+                "first_name": "Sobat", 
+                "last_name": "Jvro"
             },
             "item_details": [{ 
                 "id": "TPL-01", 
@@ -100,9 +103,10 @@ app.post('/api/checkout', async (req, res) => {
 });
 
 // =========================================================================
-// API 2: WEBHOOK MIDTRANS
+// API 2: WEBHOOK MIDTRANS (TELAH DIPERBAIKI)
 // =========================================================================
-app.post('/api/midtrans-webhook', async (req, res) => {
+// PERBAIKAN: URL disamakan dengan konfigurasi di dashboard Midtrans
+app.post('/api/webhook', async (req, res) => {
     try {
         const notificationJson = req.body;
         const statusResponse = await snap.transaction.notification(notificationJson);
@@ -110,28 +114,37 @@ app.post('/api/midtrans-webhook', async (req, res) => {
         let orderId = statusResponse.order_id;
         let transactionStatus = statusResponse.transaction_status;
 
-        console.log(`Status Pembayaran ${orderId}: ${transactionStatus}`);
+        console.log(`[WEBHOOK] Status Pembayaran ${orderId}: ${transactionStatus}`);
 
+        // Jika pembayaran sukses
         if (transactionStatus == 'settlement' || transactionStatus == 'capture') {
             const order = pendingOrders[orderId];
             
-            if (order && order.status !== 'PAID') {
+            // Pengecekan jika memori hilang karena Vercel tertidur
+            if (!order) {
+                console.error(`🚨 ERROR KRITIS: Data HTML untuk pesanan ${orderId} hilang dari memori Vercel. Email gagal dikirim!`);
+                return res.status(200).send('OK'); 
+            }
+            
+            if (order.status !== 'PAID') {
                 order.status = 'PAID';
                 
                 if (order.sendMethod === 'email') {
+                    console.log(`[EMAIL] Mencoba mengirim file ke: ${order.contact}...`);
                     await transporter.sendMail({
-                        from: process.env.EMAIL_USER,
+                        from: `"Jvro Finance" <${process.env.EMAIL_USER}>`,
                         to: order.contact,
-                        subject: 'Pesanan Template Anda - TemplateHub',
-                        text: 'Terima kasih telah membeli! File HTML pesanan Anda sudah terlampir.',
+                        subject: '🚀 File Template Website Anda Sudah Siap!',
+                        text: 'Terima kasih telah berbelanja di Jvro! File HTML pesanan Anda sudah kami lampirkan pada email ini. Silakan unduh dan buka menggunakan browser (Chrome/Safari).',
                         attachments: [{ 
-                            filename: 'Pesanan_Template_Kamu.html', 
+                            filename: `Jvro_Template_${orderId}.html`, 
                             content: order.htmlData 
                         }]
                     });
-                    console.log("✅ File berhasil dikirim ke Email pembeli!");
+                    console.log(`✅ SUKSES: File berhasil dikirim ke Email pembeli (${order.contact})!`);
                 } 
                 
+                // Hapus dari memori untuk menghemat RAM
                 delete pendingOrders[orderId];
             }
         }
